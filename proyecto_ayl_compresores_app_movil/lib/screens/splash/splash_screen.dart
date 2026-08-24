@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
@@ -10,9 +12,11 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     // Espera 3 segundos y navega a la pantalla de navegación principal
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () {
       // pushReplacement quita el splash screen para que el usuario no pueda "volver" a él
-      Navigator.pushReplacementNamed(context, '/home'); 
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
     });
   }
 

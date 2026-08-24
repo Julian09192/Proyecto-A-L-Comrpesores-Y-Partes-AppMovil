@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'inicio_view.dart';
+import '../productos/productos_screen.dart';
+import '../cart/cart_screen.dart';
 
 class MainNavigation extends StatefulWidget {
+  const MainNavigation({super.key});
+
   @override
-  _MainNavigationState createState() => _MainNavigationState();
+  State<MainNavigation> createState() => _MainNavigationState();
 }
 
 class _MainNavigationState extends State<MainNavigation> {
@@ -12,7 +16,7 @@ class _MainNavigationState extends State<MainNavigation> {
   final List<Widget> _vistas = [
     const InicioView(), // Tu vista de inicio
     const Center(child: Text('Contenido de Nosotros')),
-    const Center(child: Text('Contenido de Productos')),
+    const ProductsScreen(),
     const Center(child: Text('Contenido de Contactos')),
   ];
 
@@ -40,15 +44,17 @@ class _MainNavigationState extends State<MainNavigation> {
             onPressed: () {
               // Aquí luego programaremos que se abra tu formulario de login 
               // (donde entran el admin, empleado o cliente)
-              print("Abrir Login");
+              debugPrint('Abrir Login');
             },
           ),
           // Botón del Carrito de Compras
           IconButton(
             icon: const Icon(Icons.shopping_cart, color: Colors.amber), // Amarillo para destacar
             onPressed: () {
-              // Aquí programaremos que se abra el panel del carrito con el total
-              print("Abrir Carrito");
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CartScreen()),
+              );
             },
           ),
           const SizedBox(width: 10), // Un pequeño espacio al final para que no quede pegado al borde

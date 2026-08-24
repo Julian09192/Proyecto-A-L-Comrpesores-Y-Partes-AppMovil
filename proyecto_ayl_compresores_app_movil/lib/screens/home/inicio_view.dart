@@ -51,7 +51,7 @@ class InicioView extends StatelessWidget {
         // Un filtro oscuro para que las letras blancas se lean perfecto
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.6),
+          color: Colors.black.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
@@ -182,7 +182,7 @@ class InicioView extends StatelessWidget {
         borderRadius: BorderRadius.circular(12), // Bordes más suaves
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05), // Sombra muy sutil
+            color: Colors.grey.shade300,
             blurRadius: 10,
             spreadRadius: 2,
             offset: const Offset(0, 4), // Sombra hacia abajo
