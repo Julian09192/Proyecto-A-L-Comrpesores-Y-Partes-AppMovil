@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
-import 'app.dart'; // Importamos el archivo app.dart que configuraremos a continuación
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Importamos dotenv
+import 'app.dart';
+import 'services/supabase/supabase_service.dart';
 
-// La función main() es lo primero que ejecuta Flutter al abrir la app
-void main() {
-  // runApp toma tu aplicación y la dibuja en la pantalla
-  runApp(const MiApp()); 
+Future<void> main() async {
+  // 1. Asegura que los componentes visuales estén listos antes de cargar cosas de internet
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. Carga las llaves secretas de tu archivo .env
+  await dotenv.load(fileName: ".env");
+
+  // 3. Inicializa la conexión con Supabase usando tu servicio
+  await SupabaseService.initialize();
+
+  // 4. Finalmente, arranca la aplicación visual
+  runApp(const MiApp());
 }

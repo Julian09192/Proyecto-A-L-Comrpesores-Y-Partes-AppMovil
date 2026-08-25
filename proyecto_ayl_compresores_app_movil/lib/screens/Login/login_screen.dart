@@ -273,19 +273,28 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      final response = await Supabase.instance.client.auth.signInWithPassword(email: email, password: password);
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
       if (response.user != null) {
         _mostrarNotificacion('¡Inicio de sesión exitoso!');
-        
+
         // Cierra la pantalla de login y limpia el stack de navegación
         if (mounted) {
           // Aquí más adelante validaremos el ROL (Admin/Empleado/Cliente)
           // Para avanzar al paso 2, simularemos que entra al dashboard de Admin
-          Navigator.pushReplacementNamed(context, '/dashboard_admin'); 
+          Navigator.pushReplacementNamed(context, '/dashboard_admin');
         }
       }
+    } on AuthException catch (e) {
+      debugPrint("ERROR DE AUTENTICACIÓN SUPABASE: ${e.message}");
+      _mostrarNotificacion(e.message, esError: true);
     } catch (e) {
-      _mostrarNotificacion('Credenciales incorrectas. Inténtalo de nuevo.', esError: true);
+      // ESTO IMPRIMIRÁ EL ERROR REAL EN TU CONSOLA DE VISUAL STUDIO CODE
+      debugPrint("ERROR DE SUPABASE: $e");
+
+      _mostrarNotificacion('Error: $e', esError: true);
     }
   }
 }

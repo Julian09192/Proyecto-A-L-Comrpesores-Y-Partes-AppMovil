@@ -44,16 +44,10 @@ class _MainNavigationState extends State<MainNavigation> {
           IconButton(
             icon: const Icon(Icons.person, color: Colors.white),
             onPressed: () {
-<<<<<<< HEAD
-              // Aquí luego programaremos que se abra tu formulario de login 
-              // (donde entran el admin, empleado o cliente)
-              debugPrint('Abrir Login');
-=======
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
               );
->>>>>>> julian
             },
           ),
           // Botón del Carrito de Compras
