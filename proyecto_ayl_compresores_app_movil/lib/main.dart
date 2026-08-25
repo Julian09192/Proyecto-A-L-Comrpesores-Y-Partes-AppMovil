@@ -204,7 +204,7 @@ class _PasarelaPagoScreenState extends State<PasarelaPagoScreen> {
       ),
     );
   }
-//
+
   Widget _vistaMetodoPago() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,7 +371,6 @@ class _PasarelaPagoScreenState extends State<PasarelaPagoScreen> {
             child: const Text('Generar Comprobante de Venta', style: TextStyle(color: Color(0xFF10142D), fontWeight: FontWeight.bold, fontSize: 15)),
           ),
         ),
-
         const SizedBox(height: 8),
         SizedBox(
           width: double.infinity,
