@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -263,6 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // --- LÓGICA DE INICIO DE SESIÓN ---
+  // --- LÓGICA DE INICIO DE SESIÓN ---
   Future<void> _ejecutarLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -273,17 +275,24 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
+      // 1. Hacemos la petición a Supabase
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: password,
       );
+      
+      // 2. Si todo sale bien y nos devuelve un usuario...
       if (response.user != null) {
+        
+        // 3. ¡AHORA SÍ! Guardamos el token para usarlo en la vista de Usuarios
+        final prefs = await SharedPreferences.getInstance();
+        final token = response.session?.accessToken ?? '';
+        await prefs.setString('auth_token', token);
+
         _mostrarNotificacion('¡Inicio de sesión exitoso!');
 
-        // Cierra la pantalla de login y limpia el stack de navegación
+        // 4. Navegamos al Dashboard
         if (mounted) {
-          // Aquí más adelante validaremos el ROL (Admin/Empleado/Cliente)
-          // Para avanzar al paso 2, simularemos que entra al dashboard de Admin
           Navigator.pushReplacementNamed(context, '/dashboard_admin');
         }
       }
@@ -291,9 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
       debugPrint("ERROR DE AUTENTICACIÓN SUPABASE: ${e.message}");
       _mostrarNotificacion(e.message, esError: true);
     } catch (e) {
-      // ESTO IMPRIMIRÁ EL ERROR REAL EN TU CONSOLA DE VISUAL STUDIO CODE
       debugPrint("ERROR DE SUPABASE: $e");
-
       _mostrarNotificacion('Error: $e', esError: true);
     }
   }

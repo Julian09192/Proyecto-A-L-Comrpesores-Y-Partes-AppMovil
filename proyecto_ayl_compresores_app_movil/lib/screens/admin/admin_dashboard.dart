@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// ¡IMPORTANTE! Asegúrate de que esta ruta coincida con dónde guardaste el archivo
+import 'admin_usuarios_view.dart'; 
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -7,9 +9,8 @@ class AdminDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      // La AppBar automáticamente pone el ícono de hamburguesa si existe un 'drawer'
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E24), // Color oscuro de A&L
+        backgroundColor: const Color(0xFF1E1E24), 
         title: const Text('Panel de Control', style: TextStyle(color: Colors.white, fontSize: 18)),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
@@ -21,7 +22,7 @@ class AdminDashboard extends StatelessWidget {
           )
         ],
       ),
-      drawer: _construirMenuLateral(context), // Aquí llamamos al menú hamburguesa
+      drawer: _construirMenuLateral(context),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(15),
         child: Column(
@@ -30,12 +31,10 @@ class AdminDashboard extends StatelessWidget {
             const Text('Últimas novedades del inventario y estado global', style: TextStyle(color: Colors.grey, fontSize: 13)),
             const SizedBox(height: 20),
             
-            // 1. Tarjetas de métricas
             _construirTarjetasMetricas(),
             
             const SizedBox(height: 30),
             
-            // 2. Sección de últimos productos (Espacio para tu compañero)
             const Text('Últimos 10 productos agregados', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const Text('Mostrando resultados recientes', style: TextStyle(color: Colors.grey, fontSize: 13)),
             const SizedBox(height: 15),
@@ -50,10 +49,9 @@ class AdminDashboard extends StatelessWidget {
   // --- EL MENÚ HAMBURGUESA (DRAWER) ---
   Widget _construirMenuLateral(BuildContext context) {
     return Drawer(
-      backgroundColor: const Color(0xFF1E1E24), // Fondo oscuro
+      backgroundColor: const Color(0xFF1E1E24), 
       child: Column(
         children: [
-          // Cabecera del menú (Perfil del Admin)
           Container(
             padding: const EdgeInsets.only(top: 50, bottom: 20, left: 20, right: 20),
             color: Colors.black26,
@@ -78,29 +76,37 @@ class AdminDashboard extends StatelessWidget {
               ],
             ),
           ),
-          // Opciones del menú basadas en tu diseño web
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _itemMenu(Icons.dashboard, 'Dashboard', activo: true),
-                _itemMenu(Icons.inventory_2, 'Productos'),
-                _itemMenu(Icons.book, 'Bitácora'),
-                _itemMenu(Icons.people, 'Usuario'),
-                _itemMenu(Icons.bar_chart, 'Reportes'),
-                _itemMenu(Icons.notifications, 'Notificaciones'),
-                _itemMenu(Icons.settings, 'Mi Perfil'),
+                _itemMenu(Icons.dashboard, 'Dashboard', activo: true, onTap: () {
+                  Navigator.pop(context); // Cierra el menú lateral
+                }),
+                _itemMenu(Icons.inventory_2, 'Productos', onTap: () {}),
+                _itemMenu(Icons.book, 'Bitácora', onTap: () {}),
+                
+                // AQUÍ CONECTAMOS LA VISTA DE USUARIOS
+                _itemMenu(Icons.people, 'Usuarios', onTap: () {
+                  Navigator.pop(context); // Primero cierra el menú lateral
+                  Navigator.push( // Luego navega a la nueva vista
+                    context, 
+                    MaterialPageRoute(builder: (context) => const AdminUsuariosView())
+                  );
+                }),
+                
+                _itemMenu(Icons.bar_chart, 'Reportes', onTap: () {}),
+                _itemMenu(Icons.notifications, 'Notificaciones', onTap: () {}),
+                _itemMenu(Icons.settings, 'Mi Perfil', onTap: () {}),
               ],
             ),
           ),
-          // Botón de salir al fondo
           const Divider(color: Colors.white24),
           ListTile(
-            leading: const Icon(Icons.exit_to_app, color: Colors.grey),
-            title: const Text('Salir del Panel', style: TextStyle(color: Colors.grey)),
+            leading: const Icon(Icons.exit_to_app, color: Colors.redAccent),
+            title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.redAccent)),
             onTap: () {
-              // Aquí luego cerraremos la sesión de Supabase y volveremos al login
-              Navigator.pushReplacementNamed(context, '/login'); // O la ruta de inicio
+              Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
             },
           ),
           const SizedBox(height: 20),
@@ -109,20 +115,19 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  Widget _itemMenu(IconData icono, String titulo, {bool activo = false}) {
+  // --- WIDGET DE ITEM DE MENÚ MODIFICADO ---
+  // Ahora recibe un "onTap" como parámetro para que cada botón haga algo distinto
+  Widget _itemMenu(IconData icono, String titulo, {bool activo = false, VoidCallback? onTap}) {
     return ListTile(
       leading: Icon(icono, color: activo ? Colors.amber : Colors.grey),
       title: Text(titulo, style: TextStyle(color: activo ? Colors.amber : Colors.grey, fontWeight: activo ? FontWeight.bold : FontWeight.normal)),
       tileColor: activo ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
-      onTap: () {
-        // Lógica de navegación del menú
-      },
+      onTap: onTap, // Le pasamos la acción aquí
     );
   }
 
   // --- TARJETAS DE MÉTRICAS GLOBALES ---
   Widget _construirTarjetasMetricas() {
-    // Usamos Wrap para que se acomoden solas en filas de 2 en el celular
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -137,7 +142,7 @@ class AdminDashboard extends StatelessWidget {
 
   Widget _tarjeta(String titulo, String valor, IconData icono, Color colorIcono) {
     return Container(
-      width: 160, // Ancho fijo para que quepan 2 por fila en la mayoría de celulares
+      width: 160,
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade200)),
       child: Column(
@@ -161,7 +166,6 @@ class AdminDashboard extends StatelessWidget {
   Widget _construirListaProductosPlaceholder() {
     return Column(
       children: List.generate(3, (index) {
-        // Generamos 3 tarjetas de ejemplo
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
