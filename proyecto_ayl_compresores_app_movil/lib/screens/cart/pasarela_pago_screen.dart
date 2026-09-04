@@ -231,7 +231,6 @@ class _PasarelaPagoScreenState extends State<PasarelaPagoScreen> {
       ),
     );
   }
-.
   Widget _inputCampo(
     String etiqueta,
     String placeholder,
@@ -496,7 +495,7 @@ class _PasarelaPagoScreenState extends State<PasarelaPagoScreen> {
       ),
     );
   }
-
+// Vista de éxito después del pago
   Widget _vistaExito() {
     return Column(
       children: [
