@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../services/products/cart_service.dart';
+<<<<<<< HEAD
+import 'pasarela_pago_screen.dart';
+=======
+>>>>>>> f8765c194c56f19b00f0a66df0d525ec6de4d8a7
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -87,7 +91,14 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                     child: const Text(
                       'Explorar catálogo',
+<<<<<<< HEAD
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+=======
                       style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+>>>>>>> f8765c194c56f19b00f0a66df0d525ec6de4d8a7
                     ),
                   ),
                 ],
@@ -112,7 +123,10 @@ class _CartScreenState extends State<CartScreen> {
                         ),
                         child: Row(
                           children: [
+<<<<<<< HEAD
+=======
                             // Miniatura del producto
+>>>>>>> f8765c194c56f19b00f0a66df0d525ec6de4d8a7
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Container(
@@ -128,12 +142,22 @@ class _CartScreenState extends State<CartScreen> {
                                           color: Colors.grey,
                                         ),
                                       )
+<<<<<<< HEAD
+                                    : const Icon(
+                                        Icons.image_not_supported_outlined,
+                                        color: Colors.grey,
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+=======
                                     : const Icon(Icons.image_not_supported_outlined, color: Colors.grey),
                               ),
                             ),
                             const SizedBox(width: 12),
 
                             // Nombre, marca y precio
+>>>>>>> f8765c194c56f19b00f0a66df0d525ec6de4d8a7
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,6 +191,17 @@ class _CartScreenState extends State<CartScreen> {
                                 ],
                               ),
                             ),
+<<<<<<< HEAD
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.remove_circle_outline,
+                                    size: 20,
+                                  ),
+                                  onPressed: () =>
+                                      _cartService.decrement(index),
+=======
 
                             // Controles de cantidad (+ / -)
                             Row(
@@ -174,6 +209,7 @@ class _CartScreenState extends State<CartScreen> {
                                 IconButton(
                                   icon: const Icon(Icons.remove_circle_outline, size: 20),
                                   onPressed: () => _cartService.decrement(index),
+>>>>>>> f8765c194c56f19b00f0a66df0d525ec6de4d8a7
                                 ),
                                 Text(
                                   '${item.cantidad}',
@@ -183,8 +219,17 @@ class _CartScreenState extends State<CartScreen> {
                                   ),
                                 ),
                                 IconButton(
+<<<<<<< HEAD
+                                  icon: const Icon(
+                                    Icons.add_circle_outline,
+                                    size: 20,
+                                  ),
+                                  onPressed: () =>
+                                      _cartService.increment(index),
+=======
                                   icon: const Icon(Icons.add_circle_outline, size: 20),
                                   onPressed: () => _cartService.increment(index),
+>>>>>>> f8765c194c56f19b00f0a66df0d525ec6de4d8a7
                                 ),
                               ],
                             ),
@@ -194,8 +239,11 @@ class _CartScreenState extends State<CartScreen> {
                     },
                   ),
                 ),
+<<<<<<< HEAD
+=======
 
                 // Resumen inferior
+>>>>>>> f8765c194c56f19b00f0a66df0d525ec6de4d8a7
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -246,10 +294,20 @@ class _CartScreenState extends State<CartScreen> {
                               ),
                             ),
                             onPressed: () {
+<<<<<<< HEAD
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PasarelaPagoScreen(
+                                    itemsCarrito: _cartService.items,
+                                    totalPagar: _cartService.totalAmount,
+                                  ),
+=======
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Procediendo a la cotización / compra...'),
                                   backgroundColor: Colors.black87,
+>>>>>>> f8765c194c56f19b00f0a66df0d525ec6de4d8a7
                                 ),
                               );
                             },
@@ -271,4 +329,8 @@ class _CartScreenState extends State<CartScreen> {
             ),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> f8765c194c56f19b00f0a66df0d525ec6de4d8a7
