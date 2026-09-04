@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:proyecto_ayl_compresores_app_movil/screens/home/main_navigation.dart';
 import 'package:proyecto_ayl_compresores_app_movil/services/supabase/supabase_service.dart';
 
@@ -7,10 +8,20 @@ Future<void> main() async {
   await SupabaseService.initialize();
   runApp(const AYLApp());
 }
+=======
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Importamos dotenv
+import 'app.dart';
+import 'services/supabase/supabase_service.dart';
 
-class AYLApp extends StatelessWidget {
-  const AYLApp({super.key});
+Future<void> main() async {
+  // 1. Asegura que los componentes visuales estén listos antes de cargar cosas de internet
+  WidgetsFlutterBinding.ensureInitialized();
+>>>>>>> f8765c194c56f19b00f0a66df0d525ec6de4d8a7
 
+  // 2. Carga las llaves secretas de tu archivo .env
+  await dotenv.load(fileName: ".env");
+
+<<<<<<< HEAD
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -28,3 +39,11 @@ class AYLApp extends StatelessWidget {
     );
   }
 }
+=======
+  // 3. Inicializa la conexión con Supabase usando tu servicio
+  await SupabaseService.initialize();
+
+  // 4. Finalmente, arranca la aplicación visual
+  runApp(const MiApp());
+}
+>>>>>>> f8765c194c56f19b00f0a66df0d525ec6de4d8a7
