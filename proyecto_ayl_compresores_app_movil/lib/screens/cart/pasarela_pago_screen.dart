@@ -231,7 +231,7 @@ class _PasarelaPagoScreenState extends State<PasarelaPagoScreen> {
       ),
     );
   }
-
+.
   Widget _inputCampo(
     String etiqueta,
     String placeholder,
