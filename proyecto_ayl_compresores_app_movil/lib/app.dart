@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:proyecto_ayl_compresores_app_movil/screens/admin/admin_dashboard.dart';
 import 'screens/splash/splash_screen.dart'; 
 import 'screens/home/main_navigation.dart';
 
@@ -22,6 +23,7 @@ class MiApp extends StatelessWidget {
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/home': (context) => const MainNavigation(),
+        '/dashboard_admin': (context) => const AdminDashboard(),
       },
     );
   }

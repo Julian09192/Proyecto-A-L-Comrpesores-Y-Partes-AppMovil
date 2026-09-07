@@ -182,7 +182,7 @@ class InicioView extends StatelessWidget {
         borderRadius: BorderRadius.circular(12), // Bordes más suaves
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05), // Sombra muy sutil
+            color: Colors.grey.shade300,
             blurRadius: 10,
             spreadRadius: 2,
             offset: const Offset(0, 4), // Sombra hacia abajo

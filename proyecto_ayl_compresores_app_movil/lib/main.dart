@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Importamos dotenv
 import 'app.dart';
 import 'services/supabase/supabase_service.dart';
 
 Future<void> main() async {
-  // Asegura la inicialización del binding antes de llamadas asíncronas
+  // 1. Asegura que los componentes visuales estén listos antes de cargar cosas de internet
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializa la conexión con Supabase
+  // 2. Carga las llaves secretas de tu archivo .env
+  await dotenv.load(fileName: ".env");
+
+  // 3. Inicializa la conexión con Supabase usando tu servicio
   await SupabaseService.initialize();
 
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MiApp();
-  }
+  // 4. Finalmente, arranca la aplicación visual
+  runApp(const MiApp());
 }
