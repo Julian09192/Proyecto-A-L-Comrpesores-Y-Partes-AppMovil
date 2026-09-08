@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'admin_usuarios_view.dart'; 
 import 'admin_bitacora_view.dart';
+import 'admin_reportes_view.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -101,7 +102,13 @@ class AdminDashboard extends StatelessWidget {
                   );
                 }),
                 
-                _itemMenu(Icons.bar_chart, 'Reportes', onTap: () {}),
+                _itemMenu(Icons.bar_chart, 'Reportes', onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AdminReportesView())
+                  );
+                }),
                 _itemMenu(Icons.notifications, 'Notificaciones', onTap: () {}),
                 _itemMenu(Icons.settings, 'Mi Perfil', onTap: () {}),
               ],
