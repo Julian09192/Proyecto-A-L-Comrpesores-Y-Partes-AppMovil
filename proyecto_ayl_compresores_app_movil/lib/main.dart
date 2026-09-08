@@ -16,7 +16,3 @@ Future<void> main() async {
   // 4. Finalmente, arranca la aplicación visual
   runApp(const MiApp());
 }
-
-  // 4. Finalmente, arranca la aplicación visual
-  runApp(const MiApp());
-}
