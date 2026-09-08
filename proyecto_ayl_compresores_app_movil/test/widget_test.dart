@@ -7,11 +7,11 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:proyecto_ayl_compresores_app_movil/main.dart';
+import 'package:proyecto_ayl_compresores_app_movil/app.dart';
 
 void main() {
   testWidgets('muestra la pantalla inicial de la aplicación', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const MiApp());
     await tester.pump();
 
     expect(find.text('A&L Compresores y Partes'), findsOneWidget);
