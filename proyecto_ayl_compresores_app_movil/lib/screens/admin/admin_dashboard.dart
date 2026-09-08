@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-// ¡IMPORTANTE! Asegúrate de que esta ruta coincida con dónde guardaste el archivo
 import 'admin_usuarios_view.dart'; 
+import 'admin_bitacora_view.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -84,7 +84,13 @@ class AdminDashboard extends StatelessWidget {
                   Navigator.pop(context); // Cierra el menú lateral
                 }),
                 _itemMenu(Icons.inventory_2, 'Productos', onTap: () {}),
-                _itemMenu(Icons.book, 'Bitácora', onTap: () {}),
+                _itemMenu(Icons.book, 'Bitácora', onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (context) => const AdminBitacoraView())
+                  );
+                }),
                 
                 // AQUÍ CONECTAMOS LA VISTA DE USUARIOS
                 _itemMenu(Icons.people, 'Usuarios', onTap: () {
