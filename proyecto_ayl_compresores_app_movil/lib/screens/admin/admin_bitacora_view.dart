@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_ayl_compresores_app_movil/models/bitacora/bitacora_model.dart';
 import 'package:proyecto_ayl_compresores_app_movil/services/bitacora/bitacora_service.dart';
+import '../../widgets/admin/navbar_admin.dart';
 
 class AdminBitacoraView extends StatefulWidget {
   const AdminBitacoraView({super.key});
@@ -67,6 +68,7 @@ class _AdminBitacoraViewState extends State<AdminBitacoraView> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      drawer: const NavbarAdmin(activeTitle: 'Bitácora'),
       appBar: AppBar(
         title: const Text('Bitácora de Movimientos', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF1E1E24),

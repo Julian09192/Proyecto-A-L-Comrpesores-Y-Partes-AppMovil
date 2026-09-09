@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_ayl_compresores_app_movil/models/user/usuario_model.dart';
 import 'package:proyecto_ayl_compresores_app_movil/services/user/usuario_service.dart';
+import '../../widgets/admin/navbar_admin.dart';
 
 class AdminUsuariosView extends StatefulWidget {
   const AdminUsuariosView({super.key});
@@ -34,18 +35,18 @@ class _AdminUsuariosViewState extends State<AdminUsuariosView> {
     setState(() => isLoading = true);
     try {
       final data = await UsuarioService.obtenerUsuarios();
+      if (!mounted) return;
       setState(() {
         usuarios = data;
         usuariosFiltrados = data;
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error de conexión con la API', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error de conexión con la API', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -77,8 +78,8 @@ class _AdminUsuariosViewState extends State<AdminUsuariosView> {
     });
 
     final exito = await UsuarioService.actualizarUsuario(usuario.id, nuevoRol, estaSuspendido);
-    
     if (!mounted) return;
+
     if (exito) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Usuario ${usuario.nombre} actualizado'), backgroundColor: Colors.green),
@@ -95,6 +96,7 @@ class _AdminUsuariosViewState extends State<AdminUsuariosView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      drawer: const NavbarAdmin(activeTitle: 'Usuarios'),
       appBar: AppBar(
         title: const Text('Control de Usuarios', style: TextStyle(color: Colors.white, fontSize: 18)),
         backgroundColor: const Color(0xFF1E1E24),

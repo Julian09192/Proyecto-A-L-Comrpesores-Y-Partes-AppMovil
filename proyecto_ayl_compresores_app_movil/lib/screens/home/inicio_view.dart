@@ -39,12 +39,14 @@ class InicioView extends StatelessWidget {
         vertical: 40,
       ), // Más alto
       decoration: const BoxDecoration(
-        // Aquí puedes cambiar este link por el de la imagen de tu tractor en la web
-        image: DecorationImage(
-          image: NetworkImage(
-            'https://images.unsplash.com/photo-1592978868661-09eb010e9474?q=80&w=1000&auto=format&fit=crop',
-          ),
-          fit: BoxFit.cover,
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF1A1A20),
+            Color(0xFF282830),
+            Color(0xFF141416),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: Container(

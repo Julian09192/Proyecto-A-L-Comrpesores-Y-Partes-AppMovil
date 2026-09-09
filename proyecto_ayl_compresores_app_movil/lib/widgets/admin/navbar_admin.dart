@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../screens/admin/admin_dashboard.dart';
-import '../../screens/admin/admin_productos.dart';
-import '../../screens/admin/admin_bitacora_view.dart';
-import '../../screens/admin/admin_usuarios_view.dart';
-import '../../screens/admin/admin_reportes_view.dart';
-import '../../screens/admin/admin_notificaciones.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../services/user/auth_helper.dart';
 
 class NavbarAdmin extends StatelessWidget {
   final String activeTitle;
@@ -16,6 +12,10 @@ class NavbarAdmin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final nombre = AuthHelper.obtenerNombre(user);
+    final email = user?.email ?? '';
+
     return Drawer(
       backgroundColor: const Color(0xFF1E1E24),
       child: Column(
@@ -30,29 +30,46 @@ class NavbarAdmin extends StatelessWidget {
                   child: Icon(Icons.shield, color: Colors.black),
                 ),
                 const SizedBox(width: 15),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Admin A&L',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        nombre,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.amber,
-                        borderRadius: BorderRadius.circular(10),
+                      if (email.isNotEmpty)
+                        Text(
+                          email,
+                          style: const TextStyle(
+                            color: Colors.white60,
+                            fontSize: 11,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'Administrador',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
                       ),
-                      child: const Text(
-                        'Nivel Máster',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -69,10 +86,7 @@ class NavbarAdmin extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (activeTitle != 'Dashboard') {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AdminDashboard()),
-                      );
+                      Navigator.pushReplacementNamed(context, '/dashboard_admin');
                     }
                   },
                 ),
@@ -84,10 +98,7 @@ class NavbarAdmin extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (activeTitle != 'Productos') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ProductsAdminScreen()),
-                      );
+                      Navigator.pushReplacementNamed(context, '/admin_productos');
                     }
                   },
                 ),
@@ -99,10 +110,7 @@ class NavbarAdmin extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (activeTitle != 'Bitácora') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AdminBitacoraView()),
-                      );
+                      Navigator.pushReplacementNamed(context, '/admin_bitacora');
                     }
                   },
                 ),
@@ -114,10 +122,7 @@ class NavbarAdmin extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (activeTitle != 'Usuarios') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AdminUsuariosView()),
-                      );
+                      Navigator.pushReplacementNamed(context, '/admin_usuarios');
                     }
                   },
                 ),
@@ -129,10 +134,7 @@ class NavbarAdmin extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (activeTitle != 'Reportes') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AdminReportesView()),
-                      );
+                      Navigator.pushReplacementNamed(context, '/admin_reportes');
                     }
                   },
                 ),
@@ -144,20 +146,18 @@ class NavbarAdmin extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     if (activeTitle != 'Notificaciones') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const NotificationAdminScreen()),
-                      );
+                      Navigator.pushReplacementNamed(context, '/admin_notificaciones');
                     }
                   },
                 ),
                 _itemMenu(
                   context: context,
-                  icono: Icons.settings,
-                  titulo: 'Mi Perfil',
-                  activo: activeTitle == 'Mi Perfil',
+                  icono: Icons.storefront,
+                  titulo: 'Ver Tienda / Catálogo',
+                  activo: false,
                   onTap: () {
                     Navigator.pop(context);
+                    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
                   },
                 ),
               ],
@@ -167,8 +167,12 @@ class NavbarAdmin extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.exit_to_app, color: Colors.redAccent),
             title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.redAccent)),
-            onTap: () {
-              Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+            onTap: () async {
+              Navigator.pop(context);
+              await AuthHelper.cerrarSesion();
+              if (context.mounted) {
+                Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+              }
             },
           ),
           const SizedBox(height: 20),

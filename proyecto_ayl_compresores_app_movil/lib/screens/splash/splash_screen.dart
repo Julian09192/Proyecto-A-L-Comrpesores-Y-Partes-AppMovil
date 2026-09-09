@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../services/user/auth_helper.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,13 +13,27 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Espera 3 segundos y navega a la pantalla de navegación principal
-    Future.delayed(const Duration(seconds: 3), () {
-      // pushReplacement quita el splash screen para que el usuario no pueda "volver" a él
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+    _verificarSesionYNavegar();
+  }
+
+  Future<void> _verificarSesionYNavegar() async {
+    // Espera 2.5 segundos para mostrar el splash screen
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final esAdmin = await AuthHelper.esAdmin(user: user);
+      if (!mounted) return;
+      if (esAdmin) {
+        Navigator.pushReplacementNamed(context, '/dashboard_admin');
+        return;
       }
-    });
+    }
+
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/home');
+    }
   }
 
   @override

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/products/producto_service.dart';
 import '../../widgets/admin/navbar_admin.dart';
 import '../../widgets/admin/notificaciones/notification_header.dart';
 import '../../widgets/admin/notificaciones/notification_filter_tabs.dart';
@@ -12,6 +13,44 @@ class NotificationAdminScreen extends StatefulWidget {
 }
 
 class _NotificationAdminScreenState extends State<NotificationAdminScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _cargarAlertasProductos();
+  }
+
+  Future<void> _cargarAlertasProductos() async {
+    try {
+      final prods = await ProductoService().getAll(soloActivos: false);
+      final alertas = prods.where((p) => p.stockTotal <= 15 || p.suspendido).map((p) {
+        final initials = p.nombre.trim().length >= 2
+            ? p.nombre.trim().substring(0, 2).toUpperCase()
+            : 'AL';
+        final sku = p.codigoInterno != null && p.codigoInterno!.isNotEmpty
+            ? 'SKU: #${p.codigoInterno}'
+            : 'ID: #${p.id}';
+        return {
+          'id': p.id.toString(),
+          'initials': initials,
+          'sku': sku,
+          'title': p.suspendido
+              ? 'Producto Suspendido: ${p.nombre}'
+              : 'Alerta de Stock (${p.stockTotal} und.): ${p.nombre}',
+          'units': '${p.stockTotal}',
+          'date': 'Inventario actual',
+          'isNew': true,
+          'showImageText': false,
+        };
+      }).toList();
+
+      if (alertas.isNotEmpty && mounted) {
+        setState(() {
+          notifications = alertas;
+        });
+      }
+    } catch (_) {}
+  }
+
   List<Map<String, dynamic>> notifications = [
     {
       'id': '1',
@@ -124,6 +163,13 @@ class _NotificationAdminScreenState extends State<NotificationAdminScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync, color: Colors.white),
+            tooltip: 'Sincronizar alertas',
+            onPressed: _cargarAlertasProductos,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
