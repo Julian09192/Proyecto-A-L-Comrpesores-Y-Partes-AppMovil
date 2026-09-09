@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
-import 'screens/admin/notification_admin.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Importamos dotenv
+import 'app.dart';
+import 'services/supabase/supabase_service.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+Future<void> main() async {
+  // 1. Asegura que los componentes visuales estén listos antes de cargar cosas de internet
+  WidgetsFlutterBinding.ensureInitialized();
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  // 2. Carga las llaves secretas de tu archivo .env
+  await dotenv.load(fileName: ".env");
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'A&L Compresores - Admin',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-      ),
-      home: const NotificationAdminScreen(),
-    );
-  }
+  // 3. Inicializa la conexión con Supabase usando tu servicio
+  await SupabaseService.initialize();
+
+  // 4. Finalmente, arranca la aplicación visual
+  runApp(const MiApp());
 }
