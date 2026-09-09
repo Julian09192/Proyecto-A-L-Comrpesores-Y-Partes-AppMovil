@@ -187,6 +187,39 @@ class AuthHelper {
         'Usuario';
   }
 
+  /// Asegura que el usuario autenticado exista en la tabla 'usuario' de Supabase
+  static Future<void> asegurarRegistroUsuario(User user) async {
+    try {
+      final email = user.email ?? '';
+      if (email.isEmpty) return;
+
+      final existing = await Supabase.instance.client
+          .from('usuario')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 3));
+
+      if (existing == null) {
+        final nombre = obtenerNombre(user);
+        final rol = (user.userMetadata?['rol'] ?? 'cliente').toString();
+
+        await Supabase.instance.client.from('usuario').upsert({
+          'id': user.id,
+          'nombre': nombre,
+          'correo': email,
+          'rol': rol,
+          'suspendido': false,
+          'creado_en': DateTime.now().toIso8601String(),
+          'actualizado_en': DateTime.now().toIso8601String(),
+        }).timeout(const Duration(seconds: 4));
+        debugPrint('AuthHelper: Usuario $email sincronizado con tabla usuario de Supabase');
+      }
+    } catch (e) {
+      debugPrint('AuthHelper: Error al asegurar registro de usuario en Supabase: $e');
+    }
+  }
+
   /// Cierra sesión de Supabase y limpia SharedPreferences
   static Future<void> cerrarSesion() async {
     // 1. Limpiar preferencias primero para que la UI se actualice inmediatamente

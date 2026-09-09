@@ -119,4 +119,50 @@ class UsuarioService {
       return [];
     }
   }
+
+  // 4. Guardar / Registrar usuario en la tabla 'usuario' de Supabase y API
+  static Future<bool> registrarUsuarioEnBaseDeDatos({
+    required String id,
+    required String nombre,
+    required String correo,
+    String rol = 'cliente',
+  }) async {
+    // A. Guardar en Supabase (tabla 'usuario')
+    try {
+      await Supabase.instance.client.from('usuario').upsert({
+        'id': id,
+        'nombre': nombre,
+        'correo': correo,
+        'rol': rol,
+        'suspendido': false,
+        'creado_en': DateTime.now().toIso8601String(),
+        'actualizado_en': DateTime.now().toIso8601String(),
+      }).timeout(const Duration(seconds: 5));
+      debugPrint('UsuarioService: Usuario $correo guardado con éxito en tabla usuario de Supabase');
+    } catch (e) {
+      debugPrint('UsuarioService: Error al insertar usuario en Supabase: $e');
+    }
+
+    // B. Notificar al backend HTTP si está disponible
+    try {
+      final token = await _getToken();
+      await http.post(
+        Uri.parse('$baseUrl/usuarios'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'id': id,
+          'nombre': nombre,
+          'correo': correo,
+          'rol': rol,
+        }),
+      ).timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('UsuarioService: API backend no disponible para registrar usuario: $e');
+    }
+
+    return true;
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/user/auth_helper.dart';
+import '../../services/user/usuario_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -477,6 +478,14 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (user != null) {
+        // 6. Guardar inmediatamente el nuevo usuario en la tabla 'usuario' de Supabase
+        await UsuarioService.registrarUsuarioEnBaseDeDatos(
+          id: user.id,
+          nombre: nombre,
+          correo: email,
+          rol: 'cliente',
+        );
+
         // Si Supabase devuelve una sesión activa directamente (email confirmation desactivada)
         if (response.session != null) {
           final prefs = await SharedPreferences.getInstance();
@@ -565,6 +574,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // 2. Si las credenciales son válidas
       if (user != null) {
+        // Asegurar que el usuario exista en la tabla 'usuario' de Supabase
+        await AuthHelper.asegurarRegistroUsuario(user);
+
         final prefs = await SharedPreferences.getInstance();
         final token = response.session?.accessToken ?? '';
 
