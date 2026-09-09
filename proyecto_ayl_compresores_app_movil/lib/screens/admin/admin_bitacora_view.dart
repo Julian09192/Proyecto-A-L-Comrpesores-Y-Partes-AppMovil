@@ -25,21 +25,21 @@ class _AdminBitacoraViewState extends State<AdminBitacoraView> {
     setState(() => isLoading = true);
     try {
       final data = await BitacoraService.obtenerMovimientos();
+      if (!mounted) return;
       setState(() {
         movimientos = data;
         movimientosFiltrados = data;
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cargar la bitácora: $e', style: const TextStyle(color: Colors.white)),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cargar la bitácora: $e', style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -71,11 +71,20 @@ class _AdminBitacoraViewState extends State<AdminBitacoraView> {
         title: const Text('Bitácora de Movimientos', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF1E1E24),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'Sincronizar',
+            onPressed: _cargarBitacora,
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.amber))
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          : RefreshIndicator(
+              onRefresh: _cargarBitacora,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Cabecera con botón sincronizar
                 Container(
@@ -188,6 +197,7 @@ class _AdminBitacoraViewState extends State<AdminBitacoraView> {
                 ),
               ],
             ),
+          ),
     );
   }
 

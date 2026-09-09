@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/user/usuario_model.dart';
 
 class UsuarioService {
-  static const String baseUrl = 'http://192.168.1.49:3001/api';
+  static const String baseUrl = 'http://192.168.1.38:3001/api';
 
   // Obtener Token guardado
   static Future<String?> _getToken() async {

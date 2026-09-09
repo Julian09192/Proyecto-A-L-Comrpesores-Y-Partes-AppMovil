@@ -41,9 +41,11 @@ class _AdminUsuariosViewState extends State<AdminUsuariosView> {
       });
     } catch (e) {
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error de conexión con la API', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error de conexión con la API', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -76,6 +78,7 @@ class _AdminUsuariosViewState extends State<AdminUsuariosView> {
 
     final exito = await UsuarioService.actualizarUsuario(usuario.id, nuevoRol, estaSuspendido);
     
+    if (!mounted) return;
     if (exito) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Usuario ${usuario.nombre} actualizado'), backgroundColor: Colors.green),

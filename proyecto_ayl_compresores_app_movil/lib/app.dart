@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_ayl_compresores_app_movil/screens/admin/admin_dashboard.dart';
 import 'screens/splash/splash_screen.dart'; 
 import 'screens/home/main_navigation.dart';
+import 'screens/admin/admin_dashboard.dart';
+import 'screens/admin/admin_productos.dart';
+import 'screens/admin/admin_notificaciones.dart';
+import 'screens/admin/admin_bitacora_view.dart';
+import 'screens/admin/admin_usuarios_view.dart';
+import 'screens/admin/admin_reportes_view.dart';
 
 class MiApp extends StatelessWidget {
   const MiApp({super.key});
@@ -24,6 +29,11 @@ class MiApp extends StatelessWidget {
         '/splash': (context) => const SplashScreen(),
         '/home': (context) => const MainNavigation(),
         '/dashboard_admin': (context) => const AdminDashboard(),
+        '/admin_productos': (context) => const ProductsAdminScreen(),
+        '/admin_notificaciones': (context) => const NotificationAdminScreen(),
+        '/admin_bitacora': (context) => const AdminBitacoraView(),
+        '/admin_usuarios': (context) => const AdminUsuariosView(),
+        '/admin_reportes': (context) => const AdminReportesView(),
       },
     );
   }

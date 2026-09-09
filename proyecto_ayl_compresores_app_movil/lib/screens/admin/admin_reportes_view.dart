@@ -14,14 +14,14 @@ class _AdminReportesViewState extends State<AdminReportesView> {
   bool _cargando = true;
 
   // Filtros del Servidor
-  String _tipoReporte = 'stock';
+  final String _tipoReporte = 'stock';
   String _filtroCategoria = 'todas';
   String _filtroProveedor = 'todos';
 
   // Filtros Locales de la Tabla
   final TextEditingController _searchController = TextEditingController();
   String _filtroEstado = 'todos'; // todos, activos, suspendidos
-  String _filtroOrden = 'recientes'; // recientes, precio_menor, precio_mayor, stock_menor, stock_mayor
+  final String _filtroOrden = 'recientes'; // recientes, precio_menor, precio_mayor, stock_menor, stock_mayor
 
   @override
   void initState() {
@@ -43,20 +43,20 @@ class _AdminReportesViewState extends State<AdminReportesView> {
         categoria: _filtroCategoria,
         proveedor: _filtroProveedor,
       );
+      if (!mounted) return;
       setState(() {
         _datosReporte = res;
         _cargando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _cargando = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al obtener reporte: $e', style: const TextStyle(color: Colors.white)),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al obtener reporte: $e', style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -89,8 +89,14 @@ class _AdminReportesViewState extends State<AdminReportesView> {
   @override
   Widget build(BuildContext context) {
     final productos = _obtenerProductosProcesados();
-    final categoriasLista = ['todas', ...(_datosReporte?.categorias.map((c) => c.categoria) ?? [])];
-    final proveedoresLista = ['todos', ...(_datosReporte?.proveedores ?? [])];
+    final List<String> categoriasLista = [
+      'todas',
+      ...?_datosReporte?.categorias.map((c) => c.categoria),
+    ];
+    final List<String> proveedoresLista = [
+      'todos',
+      ...?_datosReporte?.proveedores,
+    ];
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
@@ -125,47 +131,89 @@ class _AdminReportesViewState extends State<AdminReportesView> {
     );
   }
 
+  String _formatearValorMonetario(double valor) {
+    if (valor >= 1000000) {
+      return '\$${(valor / 1000000).toStringAsFixed(1)}M';
+    } else if (valor >= 1000) {
+      return '\$${(valor / 1000).toStringAsFixed(0)}K';
+    } else {
+      return '\$${valor.toStringAsFixed(0)}';
+    }
+  }
+
   Widget _construirPanelConfiguracion(List<String> categorias, List<String> proveedores) {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade300)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade300),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('CONFIGURACIÓN DEL REPORTE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+            const Text(
+              'CONFIGURACIÓN DEL REPORTE',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+            ),
+            const SizedBox(height: 14),
+
+            // Dropdown 1: Categoría a ancho completo
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              initialValue: categorias.contains(_filtroCategoria) ? _filtroCategoria : 'todas',
+              decoration: InputDecoration(
+                labelText: 'Filtrar por Categoría',
+                prefixIcon: const Icon(Icons.category_outlined, size: 20),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              items: categorias.toSet().map((cat) {
+                return DropdownMenuItem(
+                  value: cat,
+                  child: Text(
+                    cat == 'todas' ? 'Todas las categorías' : cat,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                );
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _filtroCategoria = val);
+                  _cargarReporte();
+                }
+              },
+            ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: categorias.contains(_filtroCategoria) ? _filtroCategoria : 'todas',
-                    decoration: const InputDecoration(labelText: 'Categoría', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
-                    items: categorias.toSet().map((cat) => DropdownMenuItem(value: cat, child: Text(cat == 'todas' ? 'Todas las categorías' : cat, overflow: TextOverflow.ellipsis))).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _filtroCategoria = val);
-                        _cargarReporte();
-                      }
-                    },
+
+            // Dropdown 2: Proveedor / Marca a ancho completo
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              initialValue: proveedores.contains(_filtroProveedor) ? _filtroProveedor : 'todos',
+              decoration: InputDecoration(
+                labelText: 'Filtrar por Proveedor / Marca',
+                prefixIcon: const Icon(Icons.business_outlined, size: 20),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              items: proveedores.toSet().map((prov) {
+                return DropdownMenuItem(
+                  value: prov,
+                  child: Text(
+                    prov == 'todos' ? 'Todos los proveedores' : prov,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: proveedores.contains(_filtroProveedor) ? _filtroProveedor : 'todos',
-                    decoration: const InputDecoration(labelText: 'Proveedor', border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
-                    items: proveedores.toSet().map((prov) => DropdownMenuItem(value: prov, child: Text(prov == 'todos' ? 'Todos los proveedores' : prov, overflow: TextOverflow.ellipsis))).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _filtroProveedor = val);
-                        _cargarReporte();
-                      }
-                    },
-                  ),
-                ),
-              ],
+                );
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _filtroProveedor = val);
+                  _cargarReporte();
+                }
+              },
             ),
           ],
         ),
@@ -177,11 +225,23 @@ class _AdminReportesViewState extends State<AdminReportesView> {
     final resumen = _datosReporte?.resumen;
     return Row(
       children: [
-        _tarjetaMetrica('PRODUCTOS', '${resumen?.totalProductos ?? 0}', Colors.black87),
+        _tarjetaMetrica(
+          'PRODUCTOS',
+          '${resumen?.totalProductos ?? 0}',
+          Colors.black87,
+        ),
         const SizedBox(width: 8),
-        _tarjetaMetrica('STOCK TOTAL', '${resumen?.stockTotal ?? 0}', Colors.amber.shade800),
+        _tarjetaMetrica(
+          'STOCK TOTAL',
+          '${resumen?.stockTotal ?? 0}',
+          Colors.amber.shade800,
+        ),
         const SizedBox(width: 8),
-        _tarjetaMetrica('VALOR INVENTARIO', '\$${(resumen?.valorTotal ?? 0).toStringAsFixed(0)}', Colors.green.shade800),
+        _tarjetaMetrica(
+          'VALOR INVENTARIO',
+          _formatearValorMonetario(resumen?.valorTotal ?? 0.0),
+          Colors.green.shade800,
+        ),
       ],
     );
   }
@@ -189,13 +249,36 @@ class _AdminReportesViewState extends State<AdminReportesView> {
   Widget _tarjetaMetrica(String titulo, String valor, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300)),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
         child: Column(
           children: [
-            Text(titulo, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey), maxLines: 1),
+            Text(
+              titulo,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 6),
-            Text(valor, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                valor,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -233,7 +316,15 @@ class _AdminReportesViewState extends State<AdminReportesView> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(cat.categoria, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                Expanded(
+                                  child: Text(
+                                    cat.categoria,
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
                                 Text('${cat.stockTotal} und.', style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
                               ],
                             ),
