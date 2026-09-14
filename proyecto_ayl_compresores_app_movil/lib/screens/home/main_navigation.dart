@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:proyecto_ayl_compresores_app_movil/screens/Login/login_screen.dart';
 import '../../services/user/auth_helper.dart';
+import '../../services/products/cart_service.dart';
 import 'inicio_view.dart';
+import 'nosotros_view.dart';
+import 'contacto_view.dart';
 import '../productos/productos_screen.dart';
 import '../cart/cart_screen.dart';
 
@@ -15,13 +18,38 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
+  final CartService _cartService = CartService();
 
-  final List<Widget> _vistas = [
-    const InicioView(),
-    const Center(child: Text('Contenido de Nosotros')),
-    const ProductsScreen(),
-    const Center(child: Text('Contenido de Contactos')),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _cartService.addListener(_onCartUpdated);
+  }
+
+  @override
+  void dispose() {
+    _cartService.removeListener(_onCartUpdated);
+    super.dispose();
+  }
+
+  void _onCartUpdated() {
+    if (mounted) setState(() {});
+  }
+
+  void _irACatalogo() {
+    setState(() {
+      _currentIndex = 2; // Pestaña de Productos
+    });
+  }
+
+  List<Widget> _obtenerVistas() {
+    return [
+      InicioView(onExplorarCatalogo: _irACatalogo),
+      NosotrosView(onExplorarCatalogo: _irACatalogo),
+      const ProductsScreen(),
+      const ContactoView(),
+    ];
+  }
 
   Future<void> _abrirMenuUsuario() async {
     final user = Supabase.instance.client.auth.currentUser;
@@ -101,7 +129,7 @@ class _MainNavigationState extends State<MainNavigation> {
                 const Divider(),
                 if (esAdmin)
                   ListTile(
-                    leading: const Icon(Icons.dashboard, color: Colors.black87),
+                    leading: const Icon(Icons.dashboard_rounded, color: Colors.black87),
                     title: const Text('Panel de Administración'),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
@@ -143,11 +171,12 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
+    final int cartCount = _cartService.totalItemsCount;
+    final vistas = _obtenerVistas();
 
     return Scaffold(
-      // --- NUEVA BARRA SUPERIOR (AppBar) ---
       appBar: AppBar(
-        backgroundColor: const Color(0xFF222222), // El color oscuro de tu marca
+        backgroundColor: const Color(0xFF222222),
         elevation: 0,
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -182,17 +211,46 @@ class _MainNavigationState extends State<MainNavigation> {
         actions: [
           // Botón de Login / Usuario
           IconButton(
+            tooltip: user != null ? 'Mi Cuenta' : 'Iniciar Sesión',
             icon: Icon(
               user != null ? Icons.account_circle : Icons.person_outline,
               color: user != null ? Colors.amber : Colors.white,
             ),
             onPressed: _abrirMenuUsuario,
           ),
-          // Botón del Carrito de Compras
+          // Botón del Carrito de Compras con Badge de cantidad
           IconButton(
-            icon: const Icon(
-              Icons.shopping_cart,
-              color: Colors.amber,
+            tooltip: 'Carrito de compras',
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(
+                  Icons.shopping_cart,
+                  color: Colors.amber,
+                ),
+                if (cartCount > 0)
+                  Positioned(
+                    right: -4,
+                    top: -4,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        cartCount > 9 ? '9+' : '$cartCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             onPressed: () {
               Navigator.push(
@@ -204,7 +262,7 @@ class _MainNavigationState extends State<MainNavigation> {
           const SizedBox(width: 10),
         ],
       ),
-      body: _vistas[_currentIndex],
+      body: vistas[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         type: BottomNavigationBarType.fixed,
@@ -217,11 +275,11 @@ class _MainNavigationState extends State<MainNavigation> {
           });
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Nosotros'),
-          BottomNavigationBarItem(icon: Icon(Icons.build), label: 'Productos'),
+          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Inicio'),
+          BottomNavigationBarItem(icon: Icon(Icons.info_outline_rounded), label: 'Nosotros'),
+          BottomNavigationBarItem(icon: Icon(Icons.construction_rounded), label: 'Productos'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.contact_mail),
+            icon: Icon(Icons.contact_support_rounded),
             label: 'Contactos',
           ),
         ],

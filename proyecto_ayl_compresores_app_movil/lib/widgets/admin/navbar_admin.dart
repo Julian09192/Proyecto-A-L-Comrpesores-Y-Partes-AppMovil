@@ -12,193 +12,151 @@ class NavbarAdmin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // AQUÍ MANTENEMOS TU LÓGICA ORIGINAL INTACTA
     final user = Supabase.instance.client.auth.currentUser;
     final nombre = AuthHelper.obtenerNombre(user);
     final email = user?.email ?? '';
 
     return Drawer(
-      backgroundColor: const Color(0xFF1E1E24),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.only(top: 50, bottom: 20, left: 20, right: 20),
-            color: Colors.black26,
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.shield, color: Colors.black),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        nombre,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+      backgroundColor: const Color(0xFF17171C), // Tono oscuro y elegante
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // --- CABECERA MODERNIZADA CON TUS DATOS REALES ---
+            Container(
+              padding: const EdgeInsets.all(25),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.white10, width: 1)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.amber, width: 2),
+                    ),
+                    child: CircleAvatar(
+                      radius: 35,
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        nombre.isNotEmpty ? nombre[0].toUpperCase() : 'A',
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
                       ),
-                      if (email.isNotEmpty)
-                        Text(
-                          email,
-                          style: const TextStyle(
-                            color: Colors.white60,
-                            fontSize: 11,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.amber,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          'Administrador',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 15),
+                  Text(
+                    nombre.isNotEmpty ? nombre : 'Admin A&L', 
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 5),
+                  if (email.isNotEmpty)
+                    Text(
+                      email,
+                      style: const TextStyle(color: Colors.white60, fontSize: 11),
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                    ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+                    child: const Text('Administrador', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber)),
+                  )
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                _itemMenu(
-                  context: context,
-                  icono: Icons.dashboard,
-                  titulo: 'Dashboard',
-                  activo: activeTitle == 'Dashboard',
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (activeTitle != 'Dashboard') {
-                      Navigator.pushReplacementNamed(context, '/dashboard_admin');
-                    }
-                  },
+            const SizedBox(height: 10),
+            
+            // --- OPCIONES DEL MENÚ (Estilo Píldora) ---
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  _itemMenu(context: context, icono: Icons.dashboard_rounded, titulo: 'Dashboard', ruta: '/dashboard_admin'),
+                  _itemMenu(context: context, icono: Icons.inventory_2_rounded, titulo: 'Productos', ruta: '/admin_productos'),
+                  _itemMenu(context: context, icono: Icons.book_rounded, titulo: 'Bitácora', ruta: '/admin_bitacora'),
+                  _itemMenu(context: context, icono: Icons.people_alt_rounded, titulo: 'Usuarios', ruta: '/admin_usuarios'),
+                  _itemMenu(context: context, icono: Icons.bar_chart_rounded, titulo: 'Reportes', ruta: '/admin_reportes'),
+                  _itemMenu(context: context, icono: Icons.notifications_rounded, titulo: 'Notificaciones', ruta: '/admin_notificaciones'),
+                  _itemMenu(context: context, icono: Icons.settings_rounded, titulo: 'Mi Perfil', ruta: '/admin_perfil'),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Divider(color: Colors.white12, height: 1),
+                  ),
+                  _itemMenu(context: context, icono: Icons.storefront_rounded, titulo: 'Ir a la Tienda', ruta: '/home'),
+                ],
+              ),
+            ),
+            
+            // --- BOTÓN DE CERRAR SESIÓN ---
+            Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.withValues(alpha: 0.1),
+                  foregroundColor: Colors.redAccent,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                _itemMenu(
-                  context: context,
-                  icono: Icons.inventory_2,
-                  titulo: 'Productos',
-                  activo: activeTitle == 'Productos',
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (activeTitle != 'Productos') {
-                      Navigator.pushReplacementNamed(context, '/admin_productos');
-                    }
-                  },
-                ),
-                _itemMenu(
-                  context: context,
-                  icono: Icons.book,
-                  titulo: 'Bitácora',
-                  activo: activeTitle == 'Bitácora',
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (activeTitle != 'Bitácora') {
-                      Navigator.pushReplacementNamed(context, '/admin_bitacora');
-                    }
-                  },
-                ),
-                _itemMenu(
-                  context: context,
-                  icono: Icons.people,
-                  titulo: 'Usuarios',
-                  activo: activeTitle == 'Usuarios',
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (activeTitle != 'Usuarios') {
-                      Navigator.pushReplacementNamed(context, '/admin_usuarios');
-                    }
-                  },
-                ),
-                _itemMenu(
-                  context: context,
-                  icono: Icons.bar_chart,
-                  titulo: 'Reportes',
-                  activo: activeTitle == 'Reportes',
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (activeTitle != 'Reportes') {
-                      Navigator.pushReplacementNamed(context, '/admin_reportes');
-                    }
-                  },
-                ),
-                _itemMenu(
-                  context: context,
-                  icono: Icons.notifications,
-                  titulo: 'Notificaciones',
-                  activo: activeTitle == 'Notificaciones',
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (activeTitle != 'Notificaciones') {
-                      Navigator.pushReplacementNamed(context, '/admin_notificaciones');
-                    }
-                  },
-                ),
-                _itemMenu(
-                  context: context,
-                  icono: Icons.storefront,
-                  titulo: 'Ver Tienda / Catálogo',
-                  activo: false,
-                  onTap: () {
-                    Navigator.pop(context);
+                icon: const Icon(Icons.exit_to_app_rounded),
+                label: const Text('Cerrar Sesión', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await AuthHelper.cerrarSesion(); // Tu lógica de cierre
+                  if (context.mounted) {
                     Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-                  },
-                ),
-              ],
+                  }
+                },
+              ),
             ),
-          ),
-          const Divider(color: Colors.white24),
-          ListTile(
-            leading: const Icon(Icons.exit_to_app, color: Colors.redAccent),
-            title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.redAccent)),
-            onTap: () async {
-              Navigator.pop(context);
-              await AuthHelper.cerrarSesion();
-              if (context.mounted) {
-                Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-              }
-            },
-          ),
-          const SizedBox(height: 20),
-        ],
+          ],
+        ),
       ),
     );
   }
 
+  // --- WIDGET REUTILIZABLE DE LA PÍLDORA ---
   Widget _itemMenu({
     required BuildContext context,
     required IconData icono,
     required String titulo,
-    bool activo = false,
-    VoidCallback? onTap,
+    required String ruta,
+    String? badge,
   }) {
-    return ListTile(
-      leading: Icon(icono, color: activo ? Colors.amber : Colors.grey),
-      title: Text(
-        titulo,
-        style: TextStyle(
-          color: activo ? Colors.amber : Colors.grey,
-          fontWeight: activo ? FontWeight.bold : FontWeight.normal,
+    final bool activo = activeTitle == titulo;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 5),
+      child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        tileColor: activo ? Colors.amber : Colors.transparent,
+        leading: Icon(icono, color: activo ? Colors.black : Colors.grey.shade400, size: 22),
+        title: Text(
+          titulo, 
+          style: TextStyle(
+            color: activo ? Colors.black : Colors.grey.shade300, 
+            fontWeight: activo ? FontWeight.bold : FontWeight.w500,
+            fontSize: 14
+          )
         ),
+        trailing: badge != null 
+          ? Container(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+            ) 
+          : null,
+        onTap: () {
+          if (!activo) {
+            Navigator.pop(context); // Cierra el drawer primero
+            Navigator.pushReplacementNamed(context, ruta);
+          }
+        },
       ),
-      tileColor: activo ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
-      onTap: onTap,
     );
   }
 }

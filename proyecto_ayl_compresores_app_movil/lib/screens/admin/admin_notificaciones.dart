@@ -206,12 +206,6 @@ class _NotificationAdminScreenState extends State<NotificationAdminScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF25D366),
-        shape: const CircleBorder(),
-        child: const Icon(Icons.chat_bubble, color: Colors.white),
-      ),
     );
   }
 }

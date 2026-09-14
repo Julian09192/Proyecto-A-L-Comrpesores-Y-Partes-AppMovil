@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/products/cart_service.dart';
+import 'pasarela_pago_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -53,8 +54,33 @@ class _CartScreenState extends State<CartScreen> {
           if (items.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              tooltip: 'Vaciar carrito',
               onPressed: () {
-                _cartService.clear();
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    title: const Text('¿Vaciar el carrito?'),
+                    content: const Text('Se eliminarán todos los productos seleccionados.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _cartService.clear();
+                        },
+                        child: const Text('Vaciar', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
         ],
@@ -246,10 +272,13 @@ class _CartScreenState extends State<CartScreen> {
                               ),
                             ),
                             onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Procediendo a la cotización / compra...'),
-                                  backgroundColor: Colors.black87,
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PasarelaPagoScreen(
+                                    itemsCarrito: _cartService.items,
+                                    totalPagar: _cartService.totalAmount,
+                                  ),
                                 ),
                               );
                             },
