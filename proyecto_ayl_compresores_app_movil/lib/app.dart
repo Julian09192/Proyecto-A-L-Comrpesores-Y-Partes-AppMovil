@@ -7,6 +7,9 @@ import 'screens/admin/admin_notificaciones.dart';
 import 'screens/admin/admin_bitacora_view.dart';
 import 'screens/admin/admin_usuarios_view.dart';
 import 'screens/admin/admin_reportes_view.dart';
+import 'screens/admin/admin_perfil_view.dart';
+import 'screens/cart/cart_screen.dart';
+import 'screens/Login/login_screen.dart';
 
 class MiApp extends StatelessWidget {
   const MiApp({super.key});
@@ -17,8 +20,8 @@ class MiApp extends StatelessWidget {
       title: 'A&L Compresores y Partes',
       debugShowCheckedModeBanner: false, 
       theme: ThemeData(
-        primaryColor: Colors.amber, // El amarillo de tu logo
-        scaffoldBackgroundColor: Colors.grey[100], // Un fondo un poco grisáceo para que resalten las tarjetas blancas
+        primaryColor: Colors.amber, 
+        scaffoldBackgroundColor: Colors.grey[100], 
       ),
       
       // initialRoute le dice a la app: "Cuando abras, ve directo a esta ruta"
@@ -34,6 +37,9 @@ class MiApp extends StatelessWidget {
         '/admin_bitacora': (context) => const AdminBitacoraView(),
         '/admin_usuarios': (context) => const AdminUsuariosView(),
         '/admin_reportes': (context) => const AdminReportesView(),
+        '/admin_perfil': (context) => const AdminPerfilView(),
+        '/cart': (context) => const CartScreen(),
+        '/login': (context) => const LoginScreen(),
       },
     );
   }

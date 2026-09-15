@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'detail_product.dart'; // Importa la vista de detalle
-<<<<<<< Updated upstream
-=======
-import '../home/main_navigation.dart'; // Asegúrate de ajustar esta ruta según la ubicación de tu archivo main_navigation.dart
->>>>>>> Stashed changes
+import '../home/main_navigation.dart'; // Ajusta esta ruta según la ubicación de tu archivo main_navigation.dart
 
 class ProductosPage extends StatelessWidget {
   const ProductosPage({super.key});
@@ -29,10 +26,6 @@ class ProductosPage extends StatelessWidget {
     ];
 
     return Scaffold(
-<<<<<<< Updated upstream
-      appBar: AppBar(title: const Text('Productos')),
-      body: ListView.builder(
-=======
       backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -59,7 +52,6 @@ class ProductosPage extends StatelessWidget {
       ),
       body: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
->>>>>>> Stashed changes
         itemCount: productos.length,
         itemBuilder: (context, index) {
           final producto = productos[index];
@@ -81,14 +73,6 @@ class ProductosPage extends StatelessWidget {
               );
             },
             child: Card(
-<<<<<<< Updated upstream
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: ListTile(
-                leading: Image.network(producto['imagenUrl']!, width: 50),
-                title: Text(producto['nombre']!),
-                subtitle: Text(producto['precio']!),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-=======
               elevation: 0.5,
               color: Colors.white,
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -124,7 +108,6 @@ class ProductosPage extends StatelessWidget {
                   ),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
->>>>>>> Stashed changes
               ),
             ),
           );

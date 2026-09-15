@@ -305,11 +305,22 @@ class _ProductsAdminScreenState extends State<ProductsAdminScreen> {
         ),
       ),
       // Botón flotante de WhatsApp
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF25D366),
-        shape: const CircleBorder(),
-        child: const Icon(Icons.chat_bubble, color: Colors.white),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => EditProduct(
+              onSaved: _cargarProductos,
+            ),
+          );
+        },
+        backgroundColor: Colors.amber,
+        foregroundColor: Colors.black,
+        icon: const Icon(Icons.add),
+        label: const Text(
+          'Nuevo Producto',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

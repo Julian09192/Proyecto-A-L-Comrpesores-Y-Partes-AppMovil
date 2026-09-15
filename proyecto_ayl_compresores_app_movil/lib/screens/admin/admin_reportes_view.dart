@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_ayl_compresores_app_movil/models/reportes/reporte_model.dart';
 import 'package:proyecto_ayl_compresores_app_movil/services/reporte/reporte_service.dart';
+import '../../widgets/admin/navbar_admin.dart';
 
 class AdminReportesView extends StatefulWidget {
   const AdminReportesView({super.key});
@@ -100,6 +101,7 @@ class _AdminReportesViewState extends State<AdminReportesView> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      drawer: const NavbarAdmin(activeTitle: 'Reportes'),
       appBar: AppBar(
         title: const Text('Reportes e Informes', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF1E1E24),
