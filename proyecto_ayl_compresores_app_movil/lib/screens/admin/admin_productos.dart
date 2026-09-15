@@ -21,6 +21,15 @@ class _ProductsAdminScreenState extends State<ProductsAdminScreen> {
   bool _cargando = true;
   String? _error;
 
+  int _filtroSeleccionadoIndex = 0;
+  final List<Map<String, dynamic>> _opcionesFiltro = [
+    {'titulo': 'Todos', 'icono': Icons.grid_view_rounded},
+    {'titulo': 'Recientes', 'icono': Icons.access_time_rounded},
+    {'titulo': 'Menor Precio', 'icono': Icons.arrow_upward_rounded},
+    {'titulo': 'Mayor Precio', 'icono': Icons.arrow_downward_rounded},
+    {'titulo': 'Suspendidos', 'icono': Icons.visibility_off_outlined},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -44,7 +53,7 @@ class _ProductsAdminScreenState extends State<ProductsAdminScreen> {
       if (!mounted) return;
       setState(() {
         _todosLosProductos = data;
-        _filtrar(_searchController.text);
+        _aplicarFiltrosYBusqueda(_searchController.text);
         _cargando = false;
       });
     } catch (e) {
@@ -56,23 +65,36 @@ class _ProductsAdminScreenState extends State<ProductsAdminScreen> {
     }
   }
 
-  void _filtrar(String query) {
+  void _aplicarFiltrosYBusqueda(String query) {
     final q = query.trim().toLowerCase();
+
+    List<ProductoModel> temporal = _todosLosProductos.where((p) {
+      final nombre = p.nombre.toLowerCase();
+      final marca = p.marca.toLowerCase();
+      final codigo = (p.codigoInterno ?? '').toLowerCase();
+      final tipo = p.tipo.toLowerCase();
+      return nombre.contains(q) ||
+          marca.contains(q) ||
+          codigo.contains(q) ||
+          tipo.contains(q);
+    }).toList();
+
+    switch (_filtroSeleccionadoIndex) {
+      case 2: // Menor Precio
+        temporal.sort((a, b) => a.precio.compareTo(b.precio));
+        break;
+      case 3: // Mayor Precio
+        temporal.sort((b, a) => a.precio.compareTo(b.precio));
+        break;
+      case 4: // Suspendidos
+        temporal = temporal.where((p) => p.suspendido).toList();
+        break;
+      default:
+        break;
+    }
+
     setState(() {
-      if (q.isEmpty) {
-        _productosFiltrados = _todosLosProductos;
-      } else {
-        _productosFiltrados = _todosLosProductos.where((p) {
-          final nombre = p.nombre.toLowerCase();
-          final marca = p.marca.toLowerCase();
-          final codigo = (p.codigoInterno ?? '').toLowerCase();
-          final tipo = p.tipo.toLowerCase();
-          return nombre.contains(q) ||
-              marca.contains(q) ||
-              codigo.contains(q) ||
-              tipo.contains(q);
-        }).toList();
-      }
+      _productosFiltrados = temporal;
     });
   }
 
@@ -105,14 +127,15 @@ class _ProductsAdminScreenState extends State<ProductsAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      // Drawer / Menú Lateral Hamburguesa
+      backgroundColor: const Color(0xFFF7F8FA),
       drawer: const NavbarAdmin(activeTitle: 'Productos'),
-      // Barra Superior Fija
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        iconTheme: const IconThemeData(color: Color(0xFF1E242B)),
         centerTitle: true,
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -120,24 +143,24 @@ class _ProductsAdminScreenState extends State<ProductsAdminScreen> {
             const Text(
               'A&L',
               style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+                color: Color(0xFF1E242B),
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
               ),
             ),
             const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1A80A),
+                color: const Color(0xFFFDB913),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text(
-                'PANEL ADMIN',
+                'ADMIN',
                 style: TextStyle(
                   color: Colors.black,
                   fontSize: 10,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
@@ -145,182 +168,256 @@ class _ProductsAdminScreenState extends State<ProductsAdminScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.sync, color: Colors.white),
+            icon: const Icon(Icons.sync_rounded, color: Color(0xFF1E242B), size: 22),
             tooltip: 'Sincronizar',
             onPressed: _cargarProductos,
           ),
         ],
       ),
-      body: RefreshIndicator(
-        color: const Color(0xFFF1A80A),
-        onRefresh: _cargarProductos,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Encabezado
-              const Text(
-                'Inventario General',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Control y administración global de productos (${_todosLosProductos.length} en total)',
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-              const SizedBox(height: 16),
+      body: Stack(
+        children: [
+          // 1. Contenido principal desplazable con margen inferior para que no lo tape la barra flotante
+          RefreshIndicator(
+            color: const Color(0xFFFDB913),
+            onRefresh: _cargarProductos,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding + 90),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Inventario General',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F2537),
+                        ),
+                      ),
+                      Text(
+                        '${_todosLosProductos.length} productos',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF7A837E),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
 
-              // Barra de búsqueda
-              TextField(
-                controller: _searchController,
-                onChanged: _filtrar,
-                decoration: InputDecoration(
-                  hintText: 'Buscar por nombre, marca o ref...',
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.grey, size: 18),
-                          onPressed: () {
-                            _searchController.clear();
-                            _filtrar('');
+                  // Sistema de Filtros Horizontales (Chips modernos)
+                  SizedBox(
+                    height: 38,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _opcionesFiltro.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final bool isSelected = _filtroSeleccionadoIndex == index;
+                        final filtro = _opcionesFiltro[index];
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              _filtroSeleccionadoIndex = index;
+                            });
+                            _aplicarFiltrosYBusqueda(_searchController.text);
                           },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Botón Nuevo Producto
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(20),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFF222222) : Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFF222222) : Colors.black.withValues(alpha: 0.08),
+                              ),
+                              boxShadow: isSelected
+                                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, 3))]
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  filtro['icono'] as IconData,
+                                  size: 15,
+                                  color: isSelected ? const Color(0xFFFDB913) : const Color(0xFF555555),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  filtro['titulo'] as String,
+                                  style: TextStyle(
+                                    color: isSelected ? const Color(0xFFFDB913) : const Color(0xFF555555),
+                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => EditProduct(
-                        onSaved: _cargarProductos,
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.add, color: Colors.white, size: 18),
-                  label: const Text(
-                    'Nuevo producto',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-              // Estado de carga / error / lista
-              if (_cargando)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40.0),
-                  child: Center(
-                    child: CircularProgressIndicator(color: Color(0xFFF1A80A)),
-                  ),
-                )
-              else if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 30.0),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 40),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Error: $_error',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  // Contenido / Carga / Listado
+                  if (_cargando)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40.0),
+                      child: Center(
+                        child: CircularProgressIndicator(color: Color(0xFFFDB913)),
+                      ),
+                    )
+                  else if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 30.0),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red, size: 40),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Error: $_error',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                            const SizedBox(height: 10),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF222222)),
+                              onPressed: _cargarProductos,
+                              child: const Text('Reintentar', style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 10),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
+                      ),
+                    )
+                  else if (_productosFiltrados.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40.0),
+                      child: Center(
+                        child: Text(
+                          'No se encontraron productos',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _productosFiltrados.length,
+                      itemBuilder: (context, index) {
+                        final producto = _productosFiltrados[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: ProductoCard(
+                            producto: producto,
+                            onEdit: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => EditProduct(
+                                  producto: producto,
+                                  onSaved: _cargarProductos,
+                                ),
+                              );
+                            },
+                            onToggleSuspension: () => _toggleSuspension(producto),
                           ),
-                          onPressed: _cargarProductos,
-                          child: const Text('Reintentar', style: TextStyle(color: Colors.white)),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // 2. Barra inferior flotante con Buscador y el Botón Amarillo al lado
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: bottomPadding > 0 ? bottomPadding + 6 : 16,
+            child: Row(
+              children: [
+                // Barra de búsqueda ergonómica inferior
+                Expanded(
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 15,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                  ),
-                )
-              else if (_productosFiltrados.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40.0),
-                  child: Center(
-                    child: Text(
-                      'No se encontraron productos',
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: _aplicarFiltrosYBusqueda,
+                      decoration: InputDecoration(
+                        hintText: 'Buscar producto o ref...',
+                        hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400, fontWeight: FontWeight.w500),
+                        prefixIcon: const Icon(Icons.search, color: Color(0xFF7A837E), size: 20),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.close, color: Colors.grey, size: 16),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _aplicarFiltrosYBusqueda('');
+                                },
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
                     ),
                   ),
-                )
-              else
-                // Lista de Tarjetas de Producto Reales
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _productosFiltrados.length,
-                  itemBuilder: (context, index) {
-                    final producto = _productosFiltrados[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: ProductoCard(
-                        producto: producto,
-                        onEdit: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => EditProduct(
-                              producto: producto,
-                              onSaved: _cargarProductos,
-                            ),
-                          );
-                        },
-                        onToggleSuspension: () => _toggleSuspension(producto),
-                      ),
-                    );
-                  },
                 ),
-            ],
-          ),
-        ),
-      ),
-      // Botón flotante de WhatsApp
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => EditProduct(
-              onSaved: _cargarProductos,
+                const SizedBox(width: 10),
+
+                // Botón Amarillo "Nuevo Producto" al lado del buscador
+                SizedBox(
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFDB913),
+                      foregroundColor: Colors.black87,
+                      elevation: 4,
+                      shadowColor: Colors.black.withValues(alpha: 0.2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => EditProduct(
+                          onSaved: _cargarProductos,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.add_rounded, size: 20),
+                    label: const Text(
+                      'Nuevo',
+                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          );
-        },
-        backgroundColor: Colors.amber,
-        foregroundColor: Colors.black,
-        icon: const Icon(Icons.add),
-        label: const Text(
-          'Nuevo Producto',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -1,85 +1,55 @@
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class NotificacionService {
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:3001/api/notificaciones';
-    }
-    return 'http://10.0.2.2:3001/api/notificaciones';
-  }
+class NotificacionesService {
+  final _supabase = Supabase.instance.client;
 
-  static Future<List<dynamic>> obtenerNotificaciones() async {
+  // Obtener todas las notificaciones ordenadas por fecha
+  Future<List<Map<String, dynamic>>> obtenerNotificaciones() async {
     try {
-      final response = await http.get(Uri.parse(baseUrl)).timeout(const Duration(seconds: 2));
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      throw Exception();
-    } catch (_) {
-      // Carga directa desde Supabase capturando imagen_url
-      final supabaseData = await Supabase.instance.client
+      final response = await _supabase
           .from('notificaciones_stock')
-          .select('*')
-          .order('id', ascending: false);
+          .select()
+          .order('creado_en', ascending: false);
       
-      return supabaseData.map((n) {
-        final nombre = n['nombre_producto'] ?? 'Producto';
-        final initials = nombre.trim().length >= 2
-            ? nombre.trim().substring(0, 2).toUpperCase()
-            : 'AL';
-            
-        return {
-          'id': n['id'].toString(),
-          'initials': initials,
-          'sku': 'SKU ID: #${n['producto_id']}',
-          'title': 'Stock Crítico (${n['stock_registrado']} und.): $nombre',
-          'units': '${n['stock_registrado']}',
-          'date': n['creado_en'] ?? 'Inventario actual',
-          'isNew': !(n['leido'] ?? false),
-          'imagenUrl': n['imagen_url'] ?? '', // 👈 Capturamos la URL de la imagen de Supabase
-          'showImageText': false,
-        };
-      }).toList();
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      throw Exception('Error al cargar notificaciones: $e');
     }
   }
 
-  static Future<void> marcarTodasComoLeidas() async {
+  // Marcar una notificación individual como leída
+  Future<void> marcarComoLeida(dynamic id) async {
     try {
-      final response = await http.put(Uri.parse('$baseUrl/marcar-todas')).timeout(const Duration(seconds: 2));
-      if (response.statusCode != 200) throw Exception();
-    } catch (_) {
-      await Supabase.instance.client
+      await _supabase
           .from('notificaciones_stock')
           .update({'leido': true})
-          .eq('leido', false);
+          .eq('id', id);
+    } catch (e) {
+      throw Exception('Error al actualizar notificación: $e');
     }
   }
 
-  static Future<void> marcarComoLeida(String id) async {
+  // 🚀 Marcar TODAS las notificaciones como leídas en Supabase
+  Future<void> marcarTodasComoLeidas() async {
     try {
-      await http.put(Uri.parse('$baseUrl/$id/leer')).timeout(const Duration(seconds: 2));
-    } catch (_) {
-      await Supabase.instance.client
+      await _supabase
           .from('notificaciones_stock')
           .update({'leido': true})
-          .eq('id', int.parse(id));
+          .eq('leido', false); // Actualiza solo las que estén en false para optimizar
+    } catch (e) {
+      throw Exception('Error al marcar todas como leídas: $e');
     }
   }
 
-  static Future<void> eliminarNotificacion(String id) async {
+  // Eliminar una notificación
+  Future<void> eliminarNotificacion(dynamic id) async {
     try {
-      await Supabase.instance.client
+      await _supabase
           .from('notificaciones_stock')
           .delete()
-          .eq('id', int.parse(id));
+          .eq('id', id);
     } catch (e) {
-      debugPrint('Error al eliminar en Supabase: $e');
-      try {
-        await http.delete(Uri.parse('$baseUrl/$id')).timeout(const Duration(seconds: 2));
-      } catch (_) {}
+      throw Exception('Error al eliminar notificación: $e');
     }
   }
 }

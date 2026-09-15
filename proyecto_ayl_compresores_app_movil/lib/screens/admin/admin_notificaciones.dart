@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../services/products/producto_service.dart';
+import '../../services/notificaciones/notificacion_service.dart';
 import '../../widgets/admin/navbar_admin.dart';
-import '../../widgets/admin/notificaciones/notification_header.dart';
-import '../../widgets/admin/notificaciones/notification_filter_tabs.dart';
 import '../../widgets/admin/notificaciones/notification_card.dart';
 
 class NotificationAdminScreen extends StatefulWidget {
@@ -13,111 +11,105 @@ class NotificationAdminScreen extends StatefulWidget {
 }
 
 class _NotificationAdminScreenState extends State<NotificationAdminScreen> {
+  bool _cargando = true;
+  bool showUnreadOnly = false;
+  
+  final NotificacionesService _notificacionesService = NotificacionesService();
+  List<Map<String, dynamic>> notifications = [];
+
   @override
   void initState() {
     super.initState();
-    _cargarAlertasProductos();
+    _cargarAlertasDesdeSupabase();
   }
 
-  Future<void> _cargarAlertasProductos() async {
+  Future<void> _cargarAlertasDesdeSupabase() async {
+    setState(() => _cargando = true);
     try {
-      final prods = await ProductoService().getAll(soloActivos: false);
-      final alertas = prods.where((p) => p.stockTotal <= 15 || p.suspendido).map((p) {
-        final initials = p.nombre.trim().length >= 2
-            ? p.nombre.trim().substring(0, 2).toUpperCase()
-            : 'AL';
-        final sku = p.codigoInterno != null && p.codigoInterno!.isNotEmpty
-            ? 'SKU: #${p.codigoInterno}'
-            : 'ID: #${p.id}';
+      final data = await _notificacionesService.obtenerNotificaciones();
+      
+      final formattedNotifications = data.map((item) {
+        final String nombreProd = item['nombre_producto'] ?? 'Producto sin nombre';
+        final initials = nombreProd.trim().length >= 2
+            ? nombreProd.trim().substring(0, 2).toUpperCase()
+            : 'ST';
+        
+        final bool leido = item['leido'] ?? false;
+
         return {
-          'id': p.id.toString(),
+          'id': item['id'].toString(),
           'initials': initials,
-          'sku': sku,
-          'title': p.suspendido
-              ? 'Producto Suspendido: ${p.nombre}'
-              : 'Alerta de Stock (${p.stockTotal} und.): ${p.nombre}',
-          'units': '${p.stockTotal}',
-          'date': 'Inventario actual',
-          'isNew': true,
+          'sku': 'PRODUCTO ID: #${item['producto_id'] ?? 'N/A'}',
+          'title': nombreProd,
+          'units': '${item['stock_registrado'] ?? 0}',
+          'date': item['creado_en'] != null ? _formatearFecha(item['creado_en']) : 'Reciente',
+          'isNew': !leido,
           'showImageText': false,
+          'imagen_url': item['imagen_url'],
         };
       }).toList();
 
-      if (alertas.isNotEmpty && mounted) {
+      if (mounted) {
         setState(() {
-          notifications = alertas;
+          notifications = formattedNotifications;
+          _cargando = false;
         });
       }
-    } catch (_) {}
-  }
-
-  List<Map<String, dynamic>> notifications = [
-    {
-      'id': '1',
-      'initials': 'FI',
-      'sku': 'SKU ID: #28',
-      'title': 'Filtro Separador de Combustible FS-19732',
-      'units': '10',
-      'date': '3/7/2026, 5:03:58 p.m.',
-      'isNew': true,
-      'showImageText': false,
-    },
-    {
-      'id': '2',
-      'initials': 'FI',
-      'sku': 'SKU ID: #28',
-      'title': 'Filtro Separador de Combustible FS-19732',
-      'units': '8',
-      'date': '3/7/2026, 4:58:52 p.m.',
-      'isNew': true,
-      'showImageText': false,
-    },
-    {
-      'id': '3',
-      'initials': 'AC',
-      'sku': 'SKU ID: #26',
-      'title': 'Aceite Ejemplo ejemplo de sustentacion',
-      'units': '5',
-      'date': '2/7/2026, 8:52:36 a.m.',
-      'isNew': true,
-      'showImageText': false,
-    },
-    {
-      'id': '4',
-      'initials': 'AC',
-      'sku': 'SKU ID: #26',
-      'title': 'Aceite Ejemplo ejemplo de sustentacion',
-      'units': '10',
-      'date': '2/7/2026, 8:51:50 a.m.',
-      'isNew': true,
-      'showImageText': false,
-    },
-    {
-      'id': '5',
-      'initials': 'EX',
-      'sku': 'SKU ID: #25',
-      'title': 'Aceite Ejemplo Premium 10W40',
-      'units': '8',
-      'date': '30/6/2026, 9:47:15 p.m.',
-      'isNew': true,
-      'showImageText': true,
-    },
-  ];
-
-  bool showUnreadOnly = false;
-
-  void _markAllAsRead() {
-    setState(() {
-      for (var notification in notifications) {
-        notification['isNew'] = false;
+    } catch (e) {
+      if (mounted) {
+        setState(() => _cargando = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al sincronizar alertas: $e'), backgroundColor: Colors.red),
+        );
       }
-    });
+    }
   }
 
-  void _deleteNotification(String id) {
-    setState(() {
-      notifications.removeWhere((item) => item['id'] == id);
-    });
+  String _formatearFecha(String fechaStr) {
+    try {
+      final fecha = DateTime.parse(fechaStr).toLocal();
+      return '${fecha.day}/${fecha.month}/${fecha.year}, ${fecha.hour}:${fecha.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return fechaStr;
+    }
+  }
+
+  // 🚀 Marcar todas como leídas en Supabase y actualizar estado local
+  Future<void> _markAllAsRead() async {
+    try {
+      await _notificacionesService.marcarTodasComoLeidas();
+      
+      setState(() {
+        for (var notification in notifications) {
+          notification['isNew'] = false;
+        }
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Todas las notificaciones fueron marcadas como leídas'),
+          backgroundColor: Colors.black87,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al actualizar estado: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _deleteNotification(String id) async {
+    try {
+      await _notificacionesService.eliminarNotificacion(id);
+      setState(() {
+        notifications.removeWhere((item) => item['id'] == id);
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al eliminar: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
@@ -128,11 +120,12 @@ class _NotificationAdminScreenState extends State<NotificationAdminScreen> {
         : notifications;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF7F8FA),
       drawer: const NavbarAdmin(activeTitle: 'Notificaciones'),
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        iconTheme: const IconThemeData(color: Color(0xFF1E242B)),
         centerTitle: true,
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -140,69 +133,205 @@ class _NotificationAdminScreenState extends State<NotificationAdminScreen> {
             const Text(
               'A&L',
               style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+                color: Color(0xFF1E242B),
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
               ),
             ),
             const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1A80A),
+                color: const Color(0xFFFDB913),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text(
-                'PANEL ADMIN',
+                'ADMIN',
                 style: TextStyle(
                   color: Colors.black,
                   fontSize: 10,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
           ],
         ),
         actions: [
+          // 🚀 Botón directo en el AppBar para Marcar Todas como Leídas
           IconButton(
-            icon: const Icon(Icons.sync, color: Colors.white),
+            icon: const Icon(Icons.done_all_rounded, color: Color(0xFF1E242B), size: 22),
+            tooltip: 'Marcar todas como leídas',
+            onPressed: unreadCount > 0 ? _markAllAsRead : null,
+          ),
+          IconButton(
+            icon: const Icon(Icons.sync_rounded, color: Color(0xFF1E242B), size: 22),
             tooltip: 'Sincronizar alertas',
-            onPressed: _cargarAlertasProductos,
+            onPressed: _cargarAlertasDesdeSupabase,
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            NotificationHeader(onMarkAllAsRead: _markAllAsRead),
-            const SizedBox(height: 20),
-            NotificationFilterTabs(
-              showUnreadOnly: showUnreadOnly,
-              unreadCount: unreadCount,
-              onTabChanged: (unreadOnly) {
-                setState(() => showUnreadOnly = unreadOnly);
-              },
-            ),
-            const SizedBox(height: 16),
-            if (displayedNotifications.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 40.0),
-                child: Center(
-                  child: Text(
-                    'No hay notificaciones para mostrar',
-                    style: TextStyle(color: Colors.grey),
+      body: RefreshIndicator(
+        color: const Color(0xFFFDB913),
+        onRefresh: _cargarAlertasDesdeSupabase,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- CABECERA ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Centro de Alertas',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F2537),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Notificaciones de stock y sistema',
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ],
                   ),
-                ),
-              )
-            else
-              ...displayedNotifications.map((item) {
-                return NotificationCard(
-                  notification: item,
-                  onDelete: () => _deleteNotification(item['id']),
-                );
-              }),
+                  // Botón de texto alternativo opcional
+                  if (unreadCount > 0)
+                    InkWell(
+                      onTap: _markAllAsRead,
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        child: Text(
+                          'Marcar leídas',
+                          style: TextStyle(
+                            color: const Color(0xFFFDB913).withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // --- PESTAÑAS (FILTROS) ---
+              Row(
+                children: [
+                  _buildTab(
+                    title: 'Todas',
+                    isActive: !showUnreadOnly,
+                    onTap: () => setState(() => showUnreadOnly = false),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildTab(
+                    title: 'No leídas ($unreadCount)',
+                    isActive: showUnreadOnly,
+                    isAlert: unreadCount > 0,
+                    onTap: () => setState(() => showUnreadOnly = true),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // --- LISTA DE NOTIFICACIONES ---
+              if (_cargando)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: CircularProgressIndicator(color: Color(0xFFFDB913)),
+                  ),
+                )
+              else if (displayedNotifications.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(40),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.notifications_active_outlined,
+                        size: 48,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Todo al día',
+                        style: TextStyle(
+                          color: Color(0xFF0F2537),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'No tienes notificaciones pendientes',
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ...displayedNotifications.map((item) {
+                  return NotificationCard(
+                    notification: item,
+                    onDelete: () => _deleteNotification(item['id']),
+                  );
+                }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTab({required String title, required bool isActive, required VoidCallback onTap, bool isAlert = false}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF222222) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isActive ? const Color(0xFF222222) : Colors.black.withValues(alpha: 0.08),
+          ),
+          boxShadow: isActive
+              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, 3))]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isAlert && isActive)
+              Container(
+                margin: const EdgeInsets.only(right: 6),
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(color: Color(0xFFFDB913), shape: BoxShape.circle),
+              ),
+            Text(
+              title,
+              style: TextStyle(
+                color: isActive ? Colors.white : const Color(0xFF555555),
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                fontSize: 12.5,
+              ),
+            ),
           ],
         ),
       ),
