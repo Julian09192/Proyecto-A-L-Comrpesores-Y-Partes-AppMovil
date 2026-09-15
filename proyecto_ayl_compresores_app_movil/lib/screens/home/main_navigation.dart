@@ -1,13 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:proyecto_ayl_compresores_app_movil/screens/Login/login_screen.dart';
-import '../../services/user/auth_helper.dart';
-import '../../services/products/cart_service.dart';
+import '../../services/products/cart_service.dart'; // Asegúrate de ajustar la ruta de importación de tu CartService
 import 'inicio_view.dart';
-import 'nosotros_view.dart';
-import 'contacto_view.dart';
 import '../productos/productos_screen.dart';
 import '../cart/cart_screen.dart';
+import 'settings.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -18,269 +16,275 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
-  final CartService _cartService = CartService();
+  final CartService _cartService = CartService(); // 🚀 Instancia del servicio de carrito
+
+  final List<Widget> _vistas = [
+    const InicioView(),
+    const ProductsScreen(),
+    const LoginScreen(),
+    const SettingsScreen(),
+  ];
+
+  final List<IconData> _iconos = [
+    Icons.grid_view_rounded,
+    Icons.inventory_2_outlined,
+    Icons.person_rounded,
+    Icons.settings_rounded,
+  ];
 
   @override
   void initState() {
     super.initState();
-    _cartService.addListener(_onCartUpdated);
+    _cartService.addListener(_actualizarContador); // 🚀 Escucha cambios en el carrito
   }
 
   @override
   void dispose() {
-    _cartService.removeListener(_onCartUpdated);
+    _cartService.removeListener(_actualizarContador); // Limpia la escucha al destruir la vista
     super.dispose();
   }
 
-  void _onCartUpdated() {
+  void _actualizarContador() {
     if (mounted) setState(() {});
-  }
-
-  void _irACatalogo() {
-    setState(() {
-      _currentIndex = 2; // Pestaña de Productos
-    });
-  }
-
-  List<Widget> _obtenerVistas() {
-    return [
-      InicioView(onExplorarCatalogo: _irACatalogo),
-      NosotrosView(onExplorarCatalogo: _irACatalogo),
-      const ProductsScreen(),
-      const ContactoView(),
-    ];
-  }
-
-  Future<void> _abrirMenuUsuario() async {
-    final user = Supabase.instance.client.auth.currentUser;
-
-    if (user == null) {
-      // Si no ha iniciado sesión, abrir la pantalla de Login
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      ).then((_) {
-        // Al regresar, refrescar el estado por si inició sesión
-        if (mounted) setState(() {});
-      });
-      return;
-    }
-
-    // Si ya tiene sesión iniciada, mostrar hoja de opciones de usuario
-    final nombre = AuthHelper.obtenerNombre(user);
-    final esAdmin = await AuthHelper.esAdmin(user: user);
-
-    if (!mounted) return;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (dialogContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.amber.shade100,
-                  child: Icon(
-                    esAdmin ? Icons.shield : Icons.person,
-                    size: 35,
-                    color: Colors.amber.shade900,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  nombre,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  user.email ?? '',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: esAdmin ? Colors.black : Colors.amber.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    esAdmin ? 'ADMINISTRADOR' : 'CLIENTE',
-                    style: TextStyle(
-                      color: esAdmin ? Colors.amber : Colors.amber.shade900,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Divider(),
-                if (esAdmin)
-                  ListTile(
-                    leading: const Icon(Icons.dashboard_rounded, color: Colors.black87),
-                    title: const Text('Panel de Administración'),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {
-                      Navigator.pop(dialogContext);
-                      Navigator.pushNamed(context, '/dashboard_admin');
-                    },
-                  ),
-                ListTile(
-                  leading: const Icon(Icons.exit_to_app, color: Colors.red),
-                  title: const Text(
-                    'Cerrar Sesión',
-                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
-                  ),
-                  onTap: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    Navigator.pop(dialogContext);
-                    await AuthHelper.cerrarSesion();
-
-                    if (mounted) {
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Sesión cerrada correctamente'),
-                          backgroundColor: Colors.black87,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                      setState(() {});
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = Supabase.instance.client.auth.currentUser;
-    final int cartCount = _cartService.totalItemsCount;
-    final vistas = _obtenerVistas();
+    final topPadding = MediaQuery.of(context).padding.top;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final int itemCount = _cartService.totalItemsCount; // 🚀 Total de elementos actual
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF222222),
-        elevation: 0,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.amber,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'A&L',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
-                  letterSpacing: 1,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'Compresores',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          // Botón de Login / Usuario
-          IconButton(
-            tooltip: user != null ? 'Mi Cuenta' : 'Iniciar Sesión',
-            icon: Icon(
-              user != null ? Icons.account_circle : Icons.person_outline,
-              color: user != null ? Colors.amber : Colors.white,
-            ),
-            onPressed: _abrirMenuUsuario,
+      backgroundColor: const Color(0xFFF7F8FA),
+      extendBody: true,
+      body: Stack(
+        children: [
+          // 1. Contenido principal
+          Positioned.fill(
+            child: _vistas[_currentIndex],
           ),
-          // Botón del Carrito de Compras con Badge de cantidad
-          IconButton(
-            tooltip: 'Carrito de compras',
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(
-                  Icons.shopping_cart,
-                  color: Colors.amber,
-                ),
-                if (cartCount > 0)
-                  Positioned(
-                    right: -4,
-                    top: -4,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.redAccent,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                      child: Text(
-                        cartCount > 9 ? '9+' : '$cartCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
+
+          // 2. Barra Superior Fija Transparente con Logo y Carrito con Badge Dinámico
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Container(
+                  height: 60 + topPadding,
+                  padding: EdgeInsets.only(
+                    top: topPadding,
+                    left: 20,
+                    right: 20,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.35),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.55),
+                        width: 1.0,
                       ),
                     ),
                   ),
-              ],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // --- LOGO (IMAGEN) ---
+                      SizedBox(
+                        height: 38,
+                        child: Image.asset(
+                          'assets/images/logo_ayl.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Image.network(
+                            'https://res.cloudinary.com/duvoqozcl/image/upload/v1777394217/logo-ayl.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Center(
+                              child: Text(
+                                'A&L COMPRESORES',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF2C3238),
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // 🚀 Botón de Carrito con Badge Dinámico Integrado
+                      SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            IconButton(
+                              splashRadius: 22,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 40,
+                                minHeight: 40,
+                              ),
+                              icon: const Icon(
+                                Icons.shopping_cart_outlined,
+                                color: Color(0xFF2C3238),
+                                size: 25,
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const CartScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            if (itemCount > 0)
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 18,
+                                    minHeight: 18,
+                                  ),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.redAccent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    '$itemCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CartScreen()),
-              );
-            },
           ),
-          const SizedBox(width: 10),
-        ],
-      ),
-      body: vistas[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.amber,
-        unselectedItemColor: Colors.grey,
-        backgroundColor: Colors.white,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Inicio'),
-          BottomNavigationBarItem(icon: Icon(Icons.info_outline_rounded), label: 'Nosotros'),
-          BottomNavigationBarItem(icon: Icon(Icons.construction_rounded), label: 'Productos'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.contact_support_rounded),
-            label: 'Contactos',
+
+          // 3. Barra Inferior Flotante Glass con Animación Deslizante
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: bottomPadding > 0 ? bottomPadding + 6 : 18,
+            child: Container(
+              height: 64,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 25,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(32),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(32),
+                      color: Colors.white.withValues(alpha: 0.38),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.65),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final double itemWidth =
+                            constraints.maxWidth / _iconos.length;
+
+                        return Stack(
+                          alignment: Alignment.centerLeft,
+                          children: [
+                            // Pastilla blanca animada
+                            AnimatedPositioned(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.fastOutSlowIn,
+                              left: _currentIndex * itemWidth +
+                                  (itemWidth - 54) / 2,
+                              child: Container(
+                                width: 54,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.92),
+                                  borderRadius: BorderRadius.circular(22),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black
+                                          .withValues(alpha: 0.06),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // Fila de iconos interactivos
+                            Row(
+                              children: List.generate(_iconos.length, (index) {
+                                final isSelected = _currentIndex == index;
+                                return Expanded(
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      setState(() {
+                                        _currentIndex = index;
+                                      });
+                                    },
+                                    child: SizedBox(
+                                      height: 64,
+                                      child: Center(
+                                        child: AnimatedScale(
+                                          scale: isSelected ? 1.15 : 1.0,
+                                          duration:
+                                              const Duration(milliseconds: 250),
+                                          child: Icon(
+                                            _iconos[index],
+                                            size: 22,
+                                            color: isSelected
+                                                ? const Color(0xFF222222)
+                                                : const Color(0xFF7A837E),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

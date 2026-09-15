@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/admin/navbar_admin.dart';
 import '../../services/products/producto_service.dart';
+import '../../services/notificaciones/notificacion_service.dart'; // 👈 Importamos el servicio de notificaciones
 import '../../models/products/producto_model.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -14,6 +15,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   final ProductoService _productoService = ProductoService();
   List<ProductoModel> _productos = [];
   bool _cargando = true;
+  int _notificacionesNoLeidas = 0; // 👈 Variable para almacenar el conteo real de no leídas
 
   @override
   void initState() {
@@ -24,10 +26,27 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<void> _cargarDatosDashboard() async {
     setState(() => _cargando = true);
     try {
-      final prods = await _productoService.getAll(soloActivos: false);
+      // Cargamos en paralelo los productos y las notificaciones para mayor fluidez
+      final results = await Future.wait([
+        _productoService.getAll(soloActivos: false),
+        NotificacionService.obtenerNotificaciones(),
+      ]);
+
+      final prods = results[0] as List<ProductoModel>;
+      final notifs = results[1] as List<dynamic>;
+
+      // Calculamos las no leídas basándonos en la API o Supabase
+      int noLeidasCount = notifs.where((n) {
+        if (n is Map<String, dynamic>) {
+          return n['isNew'] == true || n['leida'] == false;
+        }
+        return false;
+      }).length;
+
       if (!mounted) return;
       setState(() {
         _productos = prods;
+        _notificacionesNoLeidas = noLeidasCount;
         _cargando = false;
       });
     } catch (e) {
@@ -53,46 +72,50 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final List<ProductoModel> ultimosProductos = _productos.take(10).toList();
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: const Color(0xFFF7F8FA),
+      drawer: const NavbarAdmin(activeTitle: 'Dashboard'),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E24),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        iconTheme: const IconThemeData(color: Color(0xFF1E242B)),
+        centerTitle: true,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'A&L',
               style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+                color: Color(0xFF1E242B),
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.amber,
+                color: const Color(0xFFFDB913),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text(
-                'PANEL ADMIN',
+                'ADMIN',
                 style: TextStyle(
                   color: Colors.black,
                   fontSize: 10,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
           ],
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(Icons.notifications_outlined, color: Colors.white),
-                if (alertasStock > 0)
+                const Icon(Icons.notifications_outlined, color: Color(0xFF1E242B), size: 22),
+                // 🚀 Muestra el badge con el número real de notificaciones no leídas
+                if (_notificacionesNoLeidas > 0)
                   Positioned(
                     right: -2,
                     top: -2,
@@ -107,7 +130,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         minHeight: 14,
                       ),
                       child: Text(
-                        alertasStock > 9 ? '9+' : '$alertasStock',
+                        _notificacionesNoLeidas > 9 ? '9+' : '$_notificacionesNoLeidas',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 9,
@@ -120,39 +143,44 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ],
             ),
             tooltip: 'Notificaciones',
-            onPressed: () {
-              Navigator.pushNamed(context, '/admin_notificaciones');
+            onPressed: () async {
+              // Al volver de notificaciones, recargamos el dashboard para actualizar el contador
+              await Navigator.pushNamed(context, '/admin_notificaciones');
+              _cargarDatosDashboard();
             },
           ),
           IconButton(
-            icon: const Icon(Icons.sync, color: Colors.white),
+            icon: const Icon(Icons.sync_rounded, color: Color(0xFF1E242B), size: 22),
             tooltip: 'Sincronizar datos',
             onPressed: _cargarDatosDashboard,
           ),
         ],
       ),
-      drawer: const NavbarAdmin(activeTitle: 'Dashboard'),
       body: RefreshIndicator(
         onRefresh: _cargarDatosDashboard,
-        color: Colors.amber,
+        color: const Color(0xFFFDB913),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(15),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 'Panel Principal de Control',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F2537),
+                ),
               ),
               const SizedBox(height: 4),
               const Text(
                 'Últimas novedades del inventario y estado global del sistema',
-                style: TextStyle(color: Colors.grey, fontSize: 13),
+                style: TextStyle(color: Color(0xFF7A837E), fontSize: 12, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 20),
 
-              // Tarjetas de Métricas Clickables
+              // Tarjetas de Métricas Estilizadas
               _construirTarjetasMetricas(
                 totalProductos: totalProductos,
                 totalUnidades: totalUnidades,
@@ -160,17 +188,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 alertasStock: alertasStock,
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 24),
 
-              // Accesos Rápidos a Todos los Módulos Admin
+              // Accesos Rápidos a Módulos Admin
               const Text(
                 'Módulos de Gestión',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F2537)),
               ),
               const SizedBox(height: 12),
               _construirAccesosRapidos(),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 24),
 
               // Encabezado de Productos Recientes
               Row(
@@ -183,8 +211,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         const Text(
                           'Últimos productos agregados',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0F2537),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -194,8 +223,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               ? 'Cargando inventario...'
                               : 'Mostrando ${ultimosProductos.length} recientes',
                           style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
+                            color: Color(0xFF7A837E),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -217,16 +247,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           Text(
                             'Ver todos',
                             style: TextStyle(
-                              color: Colors.amber,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                              color: Color(0xFF222222),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12.5,
                             ),
                           ),
-                          SizedBox(width: 3),
+                          SizedBox(width: 4),
                           Icon(
-                            Icons.arrow_forward_ios,
-                            size: 12,
-                            color: Colors.amber,
+                            Icons.arrow_forward_rounded,
+                            size: 14,
+                            color: Color(0xFF222222),
                           ),
                         ],
                       ),
@@ -234,14 +264,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
 
-              // Lista dinámica de productos
+              // Lista dinámica de productos recientes
               if (_cargando)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(30.0),
-                    child: CircularProgressIndicator(color: Colors.amber),
+                    child: CircularProgressIndicator(color: Color(0xFFFDB913)),
                   ),
                 )
               else if (ultimosProductos.isEmpty)
@@ -250,8 +280,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   padding: const EdgeInsets.all(30),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey.shade200),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                   ),
                   child: Column(
                     children: [
@@ -264,20 +294,26 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       const Text(
                         'No hay productos registrados aún',
                         style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7A837E),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber,
+                          backgroundColor: const Color(0xFFFDB913),
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                         onPressed: () =>
                             Navigator.pushNamed(context, '/admin_productos'),
                         child: const Text(
                           'Ir a Productos Admin',
-                          style: TextStyle(color: Colors.black),
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
                         ),
                       ),
                     ],
@@ -304,36 +340,36 @@ class _AdminDashboardState extends State<AdminDashboard> {
       {
         'titulo': 'Productos',
         'subtitulo': 'Catálogo y Stock',
-        'icono': Icons.inventory_2,
-        'color': Colors.amber.shade700,
+        'icono': Icons.inventory_2_rounded,
+        'color': const Color(0xFFFDB913),
         'ruta': '/admin_productos',
       },
       {
         'titulo': 'Bitácora',
-        'subtitulo': 'Auditoría y Cambios',
-        'icono': Icons.book,
-        'color': Colors.blueGrey.shade800,
+        'subtitulo': 'Auditoría',
+        'icono': Icons.book_rounded,
+        'color': const Color(0xFF2C3238),
         'ruta': '/admin_bitacora',
       },
       {
         'titulo': 'Reportes',
-        'subtitulo': 'Métricas e Informes',
-        'icono': Icons.bar_chart,
-        'color': Colors.teal.shade700,
+        'subtitulo': 'Informes',
+        'icono': Icons.bar_chart_rounded,
+        'color': const Color(0xFF10B981),
         'ruta': '/admin_reportes',
       },
       {
-        'titulo': 'Notificaciones',
-        'subtitulo': 'Alertas y Stock',
-        'icono': Icons.notifications_active,
-        'color': Colors.orange.shade700,
+        'titulo': 'Alertas',
+        'subtitulo': 'Stock Bajo',
+        'icono': Icons.notifications_active_rounded,
+        'color': const Color(0xFFF97316),
         'ruta': '/admin_notificaciones',
       },
       {
         'titulo': 'Usuarios',
-        'subtitulo': 'Roles y Permisos',
-        'icono': Icons.people,
-        'color': Colors.indigo.shade700,
+        'subtitulo': 'Roles',
+        'icono': Icons.people_rounded,
+        'color': const Color(0xFF6366F1),
         'ruta': '/admin_usuarios',
       },
     ];
@@ -344,29 +380,31 @@ class _AdminDashboardState extends State<AdminDashboard> {
       child: Row(
         children: modulos.map((m) {
           return Container(
-            width: 130,
+            width: 125,
             margin: const EdgeInsets.only(right: 10),
             child: Material(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              elevation: 1,
+              borderRadius: BorderRadius.circular(14),
               child: InkWell(
-                borderRadius: BorderRadius.circular(10),
-                onTap: () {
-                  Navigator.pushNamed(context, m['ruta'] as String);
+                borderRadius: BorderRadius.circular(14),
+                onTap: () async {
+                  await Navigator.pushNamed(context, m['ruta'] as String);
+                  _cargarDatosDashboard();
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 14,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: (m['color'] as Color).withValues(
-                          alpha: 0.12,
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: (m['color'] as Color).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
                           m['icono'] as IconData,
@@ -374,20 +412,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           color: m['color'] as Color,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       Text(
                         m['titulo'] as String,
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                           fontSize: 13,
+                          color: Color(0xFF0F2537),
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         m['subtitulo'] as String,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 10,
+                        style: const TextStyle(
+                          color: Color(0xFF7A837E),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w500,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -429,35 +469,46 @@ class _AdminDashboardState extends State<AdminDashboard> {
             _tarjeta(
               'CATÁLOGO GENERAL',
               _cargando ? '...' : '$totalProductos',
-              Icons.inventory,
-              Colors.amber,
+              Icons.inventory_2_rounded,
+              const Color(0xFFFDB913),
               itemWidth,
-              onTap: () => Navigator.pushNamed(context, '/admin_productos'),
+              onTap: () async {
+                await Navigator.pushNamed(context, '/admin_productos');
+                _cargarDatosDashboard();
+              },
             ),
             _tarjeta(
               'UNIDADES DISPONIBLES',
               _cargando ? '...' : '$totalUnidades',
-              Icons.layers,
-              Colors.black87,
+              Icons.layers_rounded,
+              const Color(0xFF222222),
               itemWidth,
-              onTap: () => Navigator.pushNamed(context, '/admin_productos'),
+              onTap: () async {
+                await Navigator.pushNamed(context, '/admin_productos');
+                _cargarDatosDashboard();
+              },
             ),
             _tarjeta(
               'VALOR DEL INVENTARIO',
               _cargando ? '...' : formattedValor,
-              Icons.attach_money,
-              Colors.green.shade800,
+              Icons.attach_money_rounded,
+              const Color(0xFF10B981),
               itemWidth,
-              onTap: () => Navigator.pushNamed(context, '/admin_reportes'),
+              onTap: () async {
+                await Navigator.pushNamed(context, '/admin_reportes');
+                _cargarDatosDashboard();
+              },
             ),
             _tarjeta(
               'ALERTAS DE STOCK',
               _cargando ? '...' : '$alertasStock',
               Icons.warning_amber_rounded,
-              Colors.orange.shade800,
+              const Color(0xFFF97316),
               itemWidth,
-              onTap: () =>
-                  Navigator.pushNamed(context, '/admin_notificaciones'),
+              onTap: () async {
+                await Navigator.pushNamed(context, '/admin_notificaciones');
+                _cargarDatosDashboard();
+              },
             ),
           ],
         );
@@ -475,16 +526,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Container(
           width: width,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -499,8 +550,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         titulo,
                         style: const TextStyle(
                           fontSize: 10,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7A837E),
+                          fontWeight: FontWeight.w800,
                           height: 1.25,
                         ),
                         maxLines: 2,
@@ -508,7 +559,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(icono, size: 20, color: colorIcono),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: colorIcono.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icono, size: 18, color: colorIcono),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -516,21 +574,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 valor,
                 style: const TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F2537),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Row(
                 children: [
-                  Text(
+                  const Text(
                     'Ver detalle',
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 10.5, color: Color(0xFF7A837E), fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(width: 2),
-                  Icon(
-                    Icons.chevron_right,
-                    size: 12,
-                    color: Colors.grey.shade600,
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 14,
+                    color: Color(0xFF7A837E),
                   ),
                 ],
               ),
@@ -541,7 +600,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // --- ITEM DE PRODUCTO REAL ---
   Widget _construirItemProducto(ProductoModel p) {
     final String codigo = p.codigoInterno ?? 'ID: #${p.id}';
     final bool esCritico = p.stockTotal <= 5;
@@ -550,51 +608,50 @@ class _AdminDashboardState extends State<AdminDashboard> {
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: () {
-            Navigator.pushNamed(context, '/admin_productos');
+          borderRadius: BorderRadius.circular(14),
+          onTap: () async {
+            await Navigator.pushNamed(context, '/admin_productos');
+            _cargarDatosDashboard();
           },
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                // Imagen o icono del producto
                 Container(
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade200),
+                    color: const Color(0xFFF7F8FA),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
                   ),
                   child: p.imagenUrl != null && p.imagenUrl!.isNotEmpty
                       ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           child: Image.network(
                             p.imagenUrl!,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) =>
                                 const Icon(
-                                  Icons.image_not_supported,
-                                  color: Colors.grey,
-                                  size: 24,
-                                ),
+                              Icons.image_not_supported_outlined,
+                              color: Colors.grey,
+                              size: 22,
+                            ),
                           ),
                         )
                       : const Icon(
-                          Icons.inventory_2,
-                          color: Colors.grey,
-                          size: 24,
+                          Icons.inventory_2_outlined,
+                          color: Color(0xFF7A837E),
+                          size: 22,
                         ),
                 ),
                 const SizedBox(width: 12),
-                // Datos del producto
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -602,8 +659,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       Text(
                         p.nombre,
                         style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                           fontSize: 13,
+                          color: Color(0xFF0F2537),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -612,8 +670,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       Text(
                         '${p.marca} • Ref: $codigo • ${p.stockTotal} und.',
                         style: const TextStyle(
-                          color: Colors.grey,
+                          color: Color(0xFF7A837E),
                           fontSize: 11,
+                          fontWeight: FontWeight.w500,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -622,61 +681,51 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Badge de estado
                 if (p.suspendido)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade100,
-                      borderRadius: BorderRadius.circular(5),
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       'Suspendido',
                       style: TextStyle(
-                        color: Colors.red.shade900,
+                        color: Colors.red.shade700,
                         fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   )
                 else if (esCritico)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade100,
-                      borderRadius: BorderRadius.circular(5),
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       'Stock Crítico',
                       style: TextStyle(
-                        color: Colors.orange.shade900,
+                        color: Colors.orange.shade800,
                         fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   )
                 else
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade100,
-                      borderRadius: BorderRadius.circular(5),
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       'Activo',
                       style: TextStyle(
-                        color: Colors.green.shade900,
+                        color: Colors.green.shade700,
                         fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
