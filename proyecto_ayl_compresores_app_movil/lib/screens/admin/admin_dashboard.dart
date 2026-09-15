@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/admin/navbar_admin.dart';
 import '../../services/products/producto_service.dart';
-import '../../services/notificaciones/notificacion_service.dart'; // 👈 Importamos el servicio de notificaciones
+import '../../services/notificaciones/notificacion_service.dart'; // Importa el servicio de notificaciones
 import '../../models/products/producto_model.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -13,9 +13,11 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   final ProductoService _productoService = ProductoService();
+  final NotificacionesService _notificacionesService = NotificacionesService();
+  
   List<ProductoModel> _productos = [];
+  int _notificacionesSinLeerCount = 0; // Contador de notificaciones reales sin leer
   bool _cargando = true;
-  int _notificacionesNoLeidas = 0; // 👈 Variable para almacenar el conteo real de no leídas
 
   @override
   void initState() {
@@ -26,27 +28,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<void> _cargarDatosDashboard() async {
     setState(() => _cargando = true);
     try {
-      // Cargamos en paralelo los productos y las notificaciones para mayor fluidez
+      // Cargamos productos y notificaciones en paralelo desde Supabase
       final results = await Future.wait([
         _productoService.getAll(soloActivos: false),
-        NotificacionService.obtenerNotificaciones(),
+        _notificacionesService.obtenerNotificaciones(),
       ]);
 
       final prods = results[0] as List<ProductoModel>;
-      final notifs = results[1] as List<dynamic>;
+      final notificaciones = results[1] as List<Map<String, dynamic>>;
 
-      // Calculamos las no leídas basándonos en la API o Supabase
-      int noLeidasCount = notifs.where((n) {
-        if (n is Map<String, dynamic>) {
-          return n['isNew'] == true || n['leida'] == false;
-        }
-        return false;
-      }).length;
+      // Contamos cuántas notificaciones tienen el campo 'leido' en falso
+      final int sinLeer = notificaciones.where((n) => n['leido'] == false).length;
 
       if (!mounted) return;
       setState(() {
         _productos = prods;
-        _notificacionesNoLeidas = noLeidasCount;
+        _notificacionesSinLeerCount = sinLeer;
         _cargando = false;
       });
     } catch (e) {
@@ -109,13 +106,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ],
         ),
         actions: [
+          // 🚀 Icono de Campana con el badge dinámico del número de notificaciones sin leer
           IconButton(
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
                 const Icon(Icons.notifications_outlined, color: Color(0xFF1E242B), size: 22),
-                // 🚀 Muestra el badge con el número real de notificaciones no leídas
-                if (_notificacionesNoLeidas > 0)
+                if (_notificacionesSinLeerCount > 0)
                   Positioned(
                     right: -2,
                     top: -2,
@@ -130,7 +127,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         minHeight: 14,
                       ),
                       child: Text(
-                        _notificacionesNoLeidas > 9 ? '9+' : '$_notificacionesNoLeidas',
+                        _notificacionesSinLeerCount > 9 ? '9+' : '$_notificacionesSinLeerCount',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 9,
@@ -144,7 +141,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
             tooltip: 'Notificaciones',
             onPressed: () async {
-              // Al volver de notificaciones, recargamos el dashboard para actualizar el contador
+              // Al hacer clic, navega y al volver recarga para actualizar el contador del badge
               await Navigator.pushNamed(context, '/admin_notificaciones');
               _cargarDatosDashboard();
             },
@@ -387,9 +384,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
                 borderRadius: BorderRadius.circular(14),
-                onTap: () async {
-                  await Navigator.pushNamed(context, m['ruta'] as String);
-                  _cargarDatosDashboard();
+                onTap: () {
+                  Navigator.pushNamed(context, m['ruta'] as String);
                 },
                 child: Container(
                   padding: const EdgeInsets.all(12),
@@ -472,10 +468,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Icons.inventory_2_rounded,
               const Color(0xFFFDB913),
               itemWidth,
-              onTap: () async {
-                await Navigator.pushNamed(context, '/admin_productos');
-                _cargarDatosDashboard();
-              },
+              onTap: () => Navigator.pushNamed(context, '/admin_productos'),
             ),
             _tarjeta(
               'UNIDADES DISPONIBLES',
@@ -483,10 +476,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Icons.layers_rounded,
               const Color(0xFF222222),
               itemWidth,
-              onTap: () async {
-                await Navigator.pushNamed(context, '/admin_productos');
-                _cargarDatosDashboard();
-              },
+              onTap: () => Navigator.pushNamed(context, '/admin_productos'),
             ),
             _tarjeta(
               'VALOR DEL INVENTARIO',
@@ -494,10 +484,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Icons.attach_money_rounded,
               const Color(0xFF10B981),
               itemWidth,
-              onTap: () async {
-                await Navigator.pushNamed(context, '/admin_reportes');
-                _cargarDatosDashboard();
-              },
+              onTap: () => Navigator.pushNamed(context, '/admin_reportes'),
             ),
             _tarjeta(
               'ALERTAS DE STOCK',
@@ -579,14 +566,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ),
               const SizedBox(height: 6),
-              Row(
+              const Row(
                 children: [
-                  const Text(
+                  Text(
                     'Ver detalle',
                     style: TextStyle(fontSize: 10.5, color: Color(0xFF7A837E), fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(width: 2),
-                  const Icon(
+                  SizedBox(width: 2),
+                  Icon(
                     Icons.chevron_right_rounded,
                     size: 14,
                     color: Color(0xFF7A837E),
@@ -600,6 +587,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
+  // --- ITEM DE PRODUCTO REAL ---
   Widget _construirItemProducto(ProductoModel p) {
     final String codigo = p.codigoInterno ?? 'ID: #${p.id}';
     final bool esCritico = p.stockTotal <= 5;
@@ -615,9 +603,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: () async {
-            await Navigator.pushNamed(context, '/admin_productos');
-            _cargarDatosDashboard();
+          onTap: () {
+            Navigator.pushNamed(context, '/admin_productos');
           },
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -683,7 +670,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 const SizedBox(width: 8),
                 if (p.suspendido)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.red.shade50,
                       borderRadius: BorderRadius.circular(6),
@@ -699,7 +689,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   )
                 else if (esCritico)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange.shade50,
                       borderRadius: BorderRadius.circular(6),
@@ -715,7 +708,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   )
                 else
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(6),
