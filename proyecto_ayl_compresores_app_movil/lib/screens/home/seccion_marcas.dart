@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 
 class SeccionMarcas extends StatelessWidget {
-  const SeccionMarcas({super.key});
+  final Function(String) onMarcaSeleccionada;
+  final VoidCallback onVerTodas;
+  final String? marcaActiva; // Sirve para resaltar la marca si está filtrada
+
+  const SeccionMarcas({
+    super.key,
+    required this.onMarcaSeleccionada,
+    required this.onVerTodas,
+    this.marcaActiva,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,12 +39,19 @@ class SeccionMarcas extends StatelessWidget {
                   color: Color(0xFF0F2537),
                 ),
               ),
-              Text(
-                'Ver todas',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.amber.shade800,
+              InkWell(
+                onTap: onVerTodas,
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Text(
+                    'Ver todas',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.amber.shade800,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -44,47 +60,57 @@ class SeccionMarcas extends StatelessWidget {
         const SizedBox(height: 12),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: marcas.map((marca) {
+              final bool isSelected = marcaActiva == marca['nombre'];
+
               return Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.black.withValues(alpha: 0.06),
+                      color: isSelected 
+                          ? const Color(0xFF222222) 
+                          : Colors.black.withValues(alpha: 0.06),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    boxShadow: isSelected 
+                        ? [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, 3))]
+                        : [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2))],
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        marca['icono'] as IconData,
-                        size: 18,
-                        color: const Color(0xFF5E6061),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        marca['nombre'] as String,
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF222222),
+                  child: Material(
+                    color: isSelected ? const Color(0xFF222222) : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => onMarcaSeleccionada(marca['nombre']),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              marca['icono'] as IconData,
+                              size: 18,
+                              color: isSelected ? const Color(0xFFFDB913) : const Color(0xFF5E6061),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              marca['nombre'] as String,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                                color: isSelected ? const Color(0xFFFDB913) : const Color(0xFF222222),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               );
