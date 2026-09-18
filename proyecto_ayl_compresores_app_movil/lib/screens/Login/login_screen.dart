@@ -3,6 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/user/auth_helper.dart';
 import '../../services/user/usuario_service.dart';
+import '../productos/productos_screen.dart'; // 🚀 Vista de favoritos
+import 'recuperar_password_screen.dart'; // 🚀 Vista independiente de recuperar contraseña
+import 'cambiar_password_screen.dart'; // 🚀 Vista independiente de cambiar contraseña
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,18 +15,26 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controladores para todos los campos
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _nameController = TextEditingController(); // Para registro
-  final _confirmPasswordController = TextEditingController(); // Para registro
+  final _nameController = TextEditingController(); 
+  final _confirmPasswordController = TextEditingController(); 
 
   bool _ocultarPassword = true;
   bool _ocultarConfirmPassword = true;
   bool _isLoading = false;
+  int _vistaActual = 0; // 0 = Login, 1 = Registro
 
-  // Estado para saber qué vista mostrar: 0 = Login, 1 = Registro, 2 = Recuperar
-  int _vistaActual = 0;
+  // 🚀 Variables de estadísticas del usuario (Tabla 'orden')
+  int _totalOrdenes = 0;
+  double _totalGastado = 0.0;
+  bool _cargandoEstadisticas = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarDatosEstadisticos();
+  }
 
   @override
   void dispose() {
@@ -34,7 +45,46 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // --- FUNCIÓN PARA MOSTRAR NOTIFICACIONES (SNACKBARS) ---
+  // 🚀 Consulta a la tabla 'orden' de Supabase para obtener estadísticas reales
+  Future<void> _cargarDatosEstadisticos() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      if (mounted) setState(() => _cargandoEstadisticas = false);
+      return;
+    }
+
+    try {
+      final response = await Supabase.instance.client
+          .from('orden')
+          .select('total')
+          .eq('usuario_id', user.id);
+
+      if (response != null) {
+        final listaOrdenes = response as List;
+        int cantidad = listaOrdenes.length;
+        double sumaTotal = 0.0;
+
+        for (var orden in listaOrdenes) {
+          final totalVal = orden['total'];
+          if (totalVal != null) {
+            sumaTotal += double.tryParse(totalVal.toString()) ?? 0.0;
+          }
+        }
+
+        if (mounted) {
+          setState(() {
+            _totalOrdenes = cantidad;
+            _totalGastado = sumaTotal;
+            _cargandoEstadisticas = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error al cargar órdenes: $e');
+      if (mounted) setState(() => _cargandoEstadisticas = false);
+    }
+  }
+
   void _mostrarNotificacion(String mensaje, {bool esError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -42,17 +92,9 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              esError ? Icons.error_outline : Icons.check_circle_outline,
-              color: Colors.white,
-            ),
+            Icon(esError ? Icons.error_outline : Icons.check_circle_outline, color: Colors.white),
             const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                mensaje,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-              ),
-            ),
+            Expanded(child: Text(mensaje, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500))),
           ],
         ),
         backgroundColor: esError ? Colors.red.shade800 : Colors.green.shade700,
@@ -63,74 +105,326 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // --- VALIDACIÓN DE EMAIL CON REGEX ---
-  bool _esEmailValido(String email) {
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    return emailRegex.hasMatch(email);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final currentUser = Supabase.instance.client.auth.currentUser;
+
     return Scaffold(
-      backgroundColor: Colors.white, // Fondo completamente limpio
+      backgroundColor: const Color(0xFFFAFAFC), // Fondo sutil corporativo
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFAFAFC),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () {
-            if (_isLoading) return;
-            // Si está en recuperar contraseña, volver al login
-            if (_vistaActual == 2) {
-              setState(() => _vistaActual = 0);
-            } else {
-              // Si está en login/registro, cerrar la pantalla y volver al inicio
-              Navigator.pop(context);
-            }
-          },
-        ),
+        leading: currentUser == null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 20),
+                onPressed: () {
+                  if (_isLoading) return;
+                  Navigator.pop(context);
+                },
+              )
+            : null, 
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Título dinámico
-              Text(
-                _vistaActual == 0
-                    ? '¡Hola de nuevo!'
-                    : _vistaActual == 1
-                        ? 'Únete a nosotros'
-                        : 'Recuperar Contraseña',
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                _vistaActual == 2
-                    ? 'Te enviaremos un enlace para restablecerla'
-                    : _vistaActual == 1
-                        ? 'Crea tu cuenta para gestionar tus compras'
-                        : 'Gestiona tus pedidos industriales',
-                style: const TextStyle(color: Colors.grey, fontSize: 15),
-              ),
-              const SizedBox(height: 30),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+          child: currentUser == null 
+              ? _construirFlujoAutenticacion() 
+              : _construirPanelPerfilEstilizado(currentUser),
+        ),
+      ),
+    );
+  }
 
-              // Pestañas (Solo se muestran si NO estamos en recuperar contraseña)
-              if (_vistaActual != 2) ...[
-                Row(
+  // ==========================================
+  // VISTA DE PERFIL REDISEÑADA (ESTÁNDAR EMPRESARIAL)
+  // ==========================================
+  Widget _construirPanelPerfilEstilizado(User user) {
+    final nombreUsuario = AuthHelper.obtenerNombre(user);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 10),
+        
+        // 1. Cabecera del Perfil (Avatar + Nombre + Estatus)
+        Center(
+          child: Column(
+            children: [
+              Stack(
+                children: [
+                  Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF222222), Color(0xFF3A424A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        nombreUsuario.isNotEmpty ? nombreUsuario[0].toUpperCase() : 'U',
+                        style: const TextStyle(
+                          color: Color(0xFFFDB913),
+                          fontSize: 40,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 2,
+                    right: 2,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF10B981), // Verde verificación de estatus
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check, size: 14, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                nombreUsuario,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F2537),
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                user.email ?? '',
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  color: Color(0xFF7A837E),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 28),
+
+        // 2. Tarjetas de Métricas Ejecutivas (Órdenes y Total Gastado)
+        Row(
+          children: [
+            Expanded(
+              child: _buildMetricCard(
+                title: 'Órdenes Realizadas',
+                value: _cargandoEstadisticas ? '...' : '$_totalOrdenes',
+                icon: Icons.receipt_long_rounded,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: _buildMetricCard(
+                title: 'Inversión Total',
+                value: _cargandoEstadisticas ? '...' : '\$${_totalGastado.toStringAsFixed(0)}',
+                icon: Icons.payments_rounded,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 28),
+
+        // 3. Menú de Navegación de Opciones de Cuenta
+        const Text(
+          'CONFIGURACIÓN Y ACTIVIDAD',
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF9CA3AF),
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.grey.shade200, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _buildModernMenuTile(
+                icon: Icons.favorite_rounded,
+                iconColor: Colors.redAccent,
+                title: 'Mis Equipos Favoritos',
+                subtitle: 'Accede a tus productos guardados',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProductsScreen(
+                        categoriaInicial: 'Favoritos',
+                        showBackButton: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              Divider(height: 1, thickness: 1, color: Colors.grey.shade100, indent: 64),
+              _buildModernMenuTile(
+                icon: Icons.shopping_bag_outlined,
+                iconColor: const Color(0xFFFDB913),
+                title: 'Mis Compras (Historial)',
+                subtitle: '$_totalOrdenes pedidos procesados',
+                onTap: () {
+                  _mostrarNotificacion('Tienes $_totalOrdenes órdenes registradas en el sistema.');
+                },
+              ),
+              Divider(height: 1, thickness: 1, color: Colors.grey.shade100, indent: 64),
+              _buildModernMenuTile(
+                icon: Icons.lock_reset_rounded,
+                iconColor: const Color(0xFF222222),
+                title: 'Cambiar Contraseña',
+                subtitle: 'Actualiza tus credenciales de acceso',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CambiarPasswordScreen()),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        // 4. Botón de Cerrar Sesión Corporativo
+        SizedBox(
+          height: 52,
+          child: TextButton.icon(
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.red.withValues(alpha: 0.05),
+              foregroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
+            ),
+            onPressed: _isLoading ? null : () async {
+              setState(() => _isLoading = true);
+              await AuthHelper.cerrarSesion();
+              if (mounted) {
+                setState(() => _isLoading = false);
+                _mostrarNotificacion('Sesión cerrada correctamente');
+              }
+            },
+            icon: _isLoading 
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent))
+                : const Icon(Icons.logout_rounded, size: 20),
+            label: const Text(
+              'CERRAR SESIÓN',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.8),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildMetricCard({required String title, required String value, required IconData icon}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade200, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(color: Color(0xFF7A837E), fontSize: 11.5, fontWeight: FontWeight.w700),
+              ),
+              Icon(icon, color: const Color(0xFFFDB913), size: 18),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(color: Color(0xFF0F2537), fontSize: 20, fontWeight: FontWeight.w900),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernMenuTile({
+    required IconData icon, 
+    required Color iconColor, 
+    required String title, 
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _construirBotonPestana('INGRESAR', 0)),
-                    Expanded(child: _construirBotonPestana('REGISTRARSE', 1)),
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: Color(0xFF0F2537)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF7A837E)),
+                    ),
                   ],
                 ),
-                const Divider(height: 30, thickness: 1),
-              ],
-
-              // Formularios dinámicos
-              if (_vistaActual == 0) _construirFormularioLogin(),
-              if (_vistaActual == 1) _construirFormularioRegistro(),
-              if (_vistaActual == 2) _construirFormularioRecuperar(),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFF9CA3AF), size: 20),
             ],
           ),
         ),
@@ -138,7 +432,34 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // --- PESTAÑAS SUPERIORES ---
+  // --- FLUJO DE AUTENTICACIÓN (LOGIN / REGISTRO) ---
+  Widget _construirFlujoAutenticacion() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          _vistaActual == 0 ? '¡Hola de nuevo!' : 'Únete a nosotros',
+          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF0F2537)),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          _vistaActual == 1 ? 'Crea tu cuenta para gestionar tus compras' : 'Gestiona tus pedidos industriales',
+          style: const TextStyle(color: Color(0xFF7A837E), fontSize: 14),
+        ),
+        const SizedBox(height: 30),
+        Row(
+          children: [
+            Expanded(child: _construirBotonPestana('INGRESAR', 0)),
+            Expanded(child: _construirBotonPestana('REGISTRARSE', 1)),
+          ],
+        ),
+        const Divider(height: 30, thickness: 1),
+        if (_vistaActual == 0) _construirFormularioLogin(),
+        if (_vistaActual == 1) _construirFormularioRegistro(),
+      ],
+    );
+  }
+
   Widget _construirBotonPestana(String texto, int indice) {
     bool activo = _vistaActual == indice;
     return GestureDetector(
@@ -146,7 +467,6 @@ class _LoginScreenState extends State<LoginScreen> {
         if (_isLoading) return;
         setState(() {
           _vistaActual = indice;
-          // Limpiamos contraseñas al alternar de pestaña para seguridad
           _passwordController.clear();
           _confirmPasswordController.clear();
         });
@@ -154,289 +474,103 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: activo ? Colors.amber : Colors.transparent,
-              width: 2,
-            ),
-          ),
+          border: Border(bottom: BorderSide(color: activo ? const Color(0xFFFDB913) : Colors.transparent, width: 2.5)),
         ),
         child: Text(
           texto,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: activo ? Colors.amber.shade700 : Colors.grey,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: activo ? const Color(0xFF222222) : Colors.grey, fontWeight: FontWeight.w800, fontSize: 13),
         ),
       ),
     );
   }
 
-  // --- VISTA 1: LOGIN ---
   Widget _construirFormularioLogin() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _construirCampoTexto(
-          controller: _emailController,
-          hint: 'Correo Electrónico',
-          icono: Icons.email_outlined,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.next,
-          enabled: !_isLoading,
-        ),
+        _construirCampoTexto(controller: _emailController, hint: 'Correo Electrónico', icono: Icons.email_outlined),
         const SizedBox(height: 15),
-        _construirCampoTexto(
-          controller: _passwordController,
-          hint: 'Contraseña',
-          esPassword: true,
-          ocultar: _ocultarPassword,
-          onTapOjo: () => setState(() => _ocultarPassword = !_ocultarPassword),
-          textInputAction: TextInputAction.done,
-          enabled: !_isLoading,
-          onSubmitted: (_) => _ejecutarLogin(),
-        ),
-        const SizedBox(height: 15),
+        _construirCampoTexto(controller: _passwordController, hint: 'Contraseña', esPassword: true, ocultar: _ocultarPassword, onTapOjo: () => setState(() => _ocultarPassword = !_ocultarPassword)),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
-            onPressed: _isLoading ? null : () => setState(() => _vistaActual = 2),
-            child: Text(
-              '¿Olvidaste tu contraseña?',
-              style: TextStyle(color: Colors.amber.shade700),
-            ),
+            onPressed: _isLoading ? null : () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RecuperarPasswordScreen()),
+              );
+            },
+            child: const Text('¿Olvidaste tu contraseña?', style: TextStyle(color: Color(0xFFE59819), fontWeight: FontWeight.w700)),
           ),
         ),
-        const SizedBox(height: 25),
+        const SizedBox(height: 20),
         _construirBotonPrincipal('INICIAR SESIÓN', _ejecutarLogin),
       ],
     );
   }
 
-  // --- VISTA 2: REGISTRO ---
   Widget _construirFormularioRegistro() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _construirCampoTexto(
-          controller: _nameController,
-          hint: 'Nombre completo',
-          icono: Icons.person_outline,
-          keyboardType: TextInputType.name,
-          textInputAction: TextInputAction.next,
-          enabled: !_isLoading,
-        ),
+        _construirCampoTexto(controller: _nameController, hint: 'Nombre completo', icono: Icons.person_outline),
         const SizedBox(height: 15),
-        _construirCampoTexto(
-          controller: _emailController,
-          hint: 'Correo Electrónico',
-          icono: Icons.email_outlined,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.next,
-          enabled: !_isLoading,
-        ),
+        _construirCampoTexto(controller: _emailController, hint: 'Correo Electrónico', icono: Icons.email_outlined),
         const SizedBox(height: 15),
-        _construirCampoTexto(
-          controller: _passwordController,
-          hint: 'Contraseña (mínimo 6 caracteres)',
-          esPassword: true,
-          ocultar: _ocultarPassword,
-          onTapOjo: () => setState(() => _ocultarPassword = !_ocultarPassword),
-          textInputAction: TextInputAction.next,
-          enabled: !_isLoading,
-        ),
+        _construirCampoTexto(controller: _passwordController, hint: 'Contraseña (mínimo 6 caracteres)', esPassword: true, ocultar: _ocultarPassword, onTapOjo: () => setState(() => _ocultarPassword = !_ocultarPassword)),
         const SizedBox(height: 15),
-        _construirCampoTexto(
-          controller: _confirmPasswordController,
-          hint: 'Confirmar Contraseña',
-          esPassword: true,
-          ocultar: _ocultarConfirmPassword,
-          onTapOjo: () => setState(() => _ocultarConfirmPassword = !_ocultarConfirmPassword),
-          textInputAction: TextInputAction.done,
-          enabled: !_isLoading,
-          onSubmitted: (_) => _ejecutarRegistro(),
-        ),
-        const SizedBox(height: 30),
+        _construirCampoTexto(controller: _confirmPasswordController, hint: 'Confirmar Contraseña', esPassword: true, ocultar: _ocultarConfirmPassword, onTapOjo: () => setState(() => _ocultarConfirmPassword = !_ocultarConfirmPassword)),
+        const SizedBox(height: 25),
         _construirBotonPrincipal('CREAR CUENTA GRATIS', _ejecutarRegistro),
       ],
     );
   }
 
-  // --- VISTA 3: RECUPERAR CONTRASEÑA ---
-  Widget _construirFormularioRecuperar() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _construirCampoTexto(
-          controller: _emailController,
-          hint: 'Correo Electrónico',
-          icono: Icons.email_outlined,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.done,
-          enabled: !_isLoading,
-          onSubmitted: (_) => _ejecutarRecuperarPassword(),
-        ),
-        const SizedBox(height: 30),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                onPressed: _isLoading ? null : () => setState(() => _vistaActual = 0),
-                child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-              ),
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: _construirBotonPrincipal('Enviar enlace', _ejecutarRecuperarPassword),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
-            SizedBox(width: 5),
-            Text(
-              'Revisa la carpeta de spam si no recibes el correo',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-          ],
-        )
-      ],
-    );
-  }
-
-  // --- WIDGETS REUTILIZABLES ---
-  Widget _construirCampoTexto({
-    required TextEditingController controller,
-    required String hint,
-    bool esPassword = false,
-    bool ocultar = false,
-    VoidCallback? onTapOjo,
-    IconData? icono,
-    TextInputType keyboardType = TextInputType.text,
-    TextInputAction textInputAction = TextInputAction.next,
-    bool enabled = true,
-    ValueChanged<String>? onSubmitted,
-  }) {
+  Widget _construirCampoTexto({required TextEditingController controller, required String hint, bool esPassword = false, bool ocultar = false, VoidCallback? onTapOjo, IconData? icono}) {
     return TextField(
       controller: controller,
       obscureText: ocultar,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      enabled: enabled,
-      onSubmitted: onSubmitted,
       decoration: InputDecoration(
         hintText: hint,
+        hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
         filled: true,
-        fillColor: enabled ? Colors.grey.shade50 : Colors.grey.shade200,
-        prefixIcon: icono != null ? Icon(icono, color: Colors.grey) : null,
-        suffixIcon: esPassword
-            ? IconButton(
-                icon: Icon(ocultar ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
-                onPressed: onTapOjo,
-              )
-            : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.amber, width: 2),
-        ),
+        fillColor: Colors.white,
+        prefixIcon: icono != null ? Icon(icono, color: Colors.grey, size: 20) : null,
+        suffixIcon: esPassword ? IconButton(icon: Icon(ocultar ? Icons.visibility_off : Icons.visibility, color: Colors.grey), onPressed: onTapOjo) : null,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200, width: 1.5)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.grey.shade200, width: 1.5)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF222222), width: 1.5)),
       ),
     );
   }
 
   Widget _construirBotonPrincipal(String texto, VoidCallback accion) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.amber,
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: 0,
+    return SizedBox(
+      height: 48,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF222222),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        onPressed: _isLoading ? null : accion,
+        child: _isLoading
+            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : Text(texto, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.5)),
       ),
-      onPressed: _isLoading ? null : accion,
-      child: _isLoading
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.black,
-              ),
-            )
-          : Text(
-              texto,
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
     );
   }
 
-  // --- LÓGICA DE REGISTRO CON VALIDACIONES COHERENTES ---
   Future<void> _ejecutarRegistro() async {
     final nombre = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
-    // 1. Validar nombre
-    if (nombre.isEmpty) {
-      _mostrarNotificacion('Por favor ingresa tu nombre completo', esError: true);
-      return;
-    }
-    if (nombre.length < 3) {
-      _mostrarNotificacion('El nombre debe tener al menos 3 caracteres', esError: true);
-      return;
-    }
-    final regexNombre = RegExp(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$");
-    if (!regexNombre.hasMatch(nombre)) {
-      _mostrarNotificacion('El nombre solo debe contener letras y espacios', esError: true);
-      return;
-    }
-
-    // 2. Validar correo electrónico
-    if (email.isEmpty) {
-      _mostrarNotificacion('Por favor ingresa tu correo electrónico', esError: true);
-      return;
-    }
-    if (!_esEmailValido(email)) {
-      _mostrarNotificacion('Ingresa un correo electrónico válido (ej: usuario@correo.com)', esError: true);
-      return;
-    }
-
-    // 3. Validar contraseña
-    if (password.isEmpty) {
-      _mostrarNotificacion('Por favor ingresa una contraseña', esError: true);
-      return;
-    }
-    if (password.length < 6) {
-      _mostrarNotificacion('La contraseña debe tener al menos 6 caracteres', esError: true);
-      return;
-    }
-    if (password.trim().isEmpty) {
-      _mostrarNotificacion('La contraseña no puede contener únicamente espacios', esError: true);
-      return;
-    }
-
-    // 4. Validar confirmación de contraseña
-    if (confirmPassword.isEmpty) {
-      _mostrarNotificacion('Por favor confirma tu contraseña', esError: true);
+    if (nombre.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      _mostrarNotificacion('Por favor completa todos los campos', esError: true);
       return;
     }
     if (password != confirmPassword) {
@@ -445,217 +579,69 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _isLoading = true);
-
     try {
-      // 5. Petición a Supabase Auth para crear la cuenta
       final response = await Supabase.instance.client.auth.signUp(
         email: email,
         password: password,
-        data: {
-          'nombre': nombre,
-          'full_name': nombre,
-          'rol': 'cliente',
-        },
+        data: {'nombre': nombre, 'rol': 'cliente'},
       );
 
-      final user = response.user;
-
-      // VALIDACIÓN CRÍTICA: Detección de correo duplicado en Supabase
-      // Si el correo ya existía previamente, Supabase devuelve identities vacío [] para proteger privacidad
-      if (user != null && (user.identities == null || user.identities!.isEmpty)) {
-        _mostrarNotificacion(
-          'Este correo electrónico ya se encuentra registrado. Por favor inicia sesión.',
-          esError: true,
-        );
-        if (mounted) {
-          setState(() {
-            _vistaActual = 0; // Llevar a pestaña de ingresar
-            _passwordController.clear();
-            _confirmPasswordController.clear();
-          });
-        }
-        return;
+      if (response.user != null) {
+        await UsuarioService.registrarUsuarioEnBaseDeDatos(id: response.user!.id, nombre: nombre, correo: email, rol: 'cliente');
+        _mostrarNotificacion('¡Cuenta creada con éxito!');
+        setState(() {});
       }
-
-      if (user != null) {
-        // 6. Guardar inmediatamente el nuevo usuario en la tabla 'usuario' de Supabase
-        await UsuarioService.registrarUsuarioEnBaseDeDatos(
-          id: user.id,
-          nombre: nombre,
-          correo: email,
-          rol: 'cliente',
-        );
-
-        // Si Supabase devuelve una sesión activa directamente (email confirmation desactivada)
-        if (response.session != null) {
-          final prefs = await SharedPreferences.getInstance();
-          final token = response.session?.accessToken ?? '';
-          await prefs.setString('auth_token', token);
-          await prefs.setString('user_id', user.id);
-          await prefs.setString('user_name', nombre);
-          await prefs.setString('user_email', email);
-          await prefs.setString('user_role', 'cliente');
-
-          _mostrarNotificacion('¡Cuenta creada con éxito! Bienvenido, $nombre');
-
-          if (mounted) {
-            _nameController.clear();
-            _emailController.clear();
-            _passwordController.clear();
-            _confirmPasswordController.clear();
-
-            // Navegar limpiando el stack
-            Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-          }
-        } else {
-          // Si Supabase requiere confirmación de correo
-          _mostrarNotificacion('¡Registro exitoso! Ya puedes iniciar sesión con tu cuenta.');
-
-          if (mounted) {
-            setState(() {
-              _vistaActual = 0; // Cambiar a la pestaña de ingresar
-              _passwordController.clear();
-              _confirmPasswordController.clear();
-            });
-          }
-        }
-      }
-    } on AuthException catch (e) {
-      debugPrint("ERROR DE REGISTRO SUPABASE: ${e.message}");
-      String mensajeError = e.message;
-      final lower = e.message.toLowerCase();
-      if (lower.contains('already registered') ||
-          lower.contains('user already exists') ||
-          lower.contains('already in use')) {
-        mensajeError = 'Este correo electrónico ya se encuentra registrado. Por favor inicia sesión.';
-      } else if (lower.contains('password')) {
-        mensajeError = 'La contraseña no cumple los requisitos mínimos de seguridad.';
-      } else if (lower.contains('rate limit')) {
-        mensajeError = 'Demasiados intentos. Por favor espera unos momentos antes de reintentar.';
-      } else if (lower.contains('invalid email')) {
-        mensajeError = 'El formato del correo electrónico no es válido.';
-      }
-      _mostrarNotificacion(mensajeError, esError: true);
     } catch (e) {
-      debugPrint("ERROR INESPERADO AL REGISTRAR: $e");
-      _mostrarNotificacion('Ocurrió un error inesperado al registrar el usuario', esError: true);
+      _mostrarNotificacion('Error en el registro: $e', esError: true);
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // --- LÓGICA DE INICIO DE SESIÓN CON MANEJO DE ROLES ---
   Future<void> _ejecutarLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      _mostrarNotificacion('Por favor llena todos los campos', esError: true);
-      return;
-    }
-
-    if (!_esEmailValido(email)) {
-      _mostrarNotificacion('Por favor ingresa un formato de correo electrónico válido', esError: true);
+      _mostrarNotificacion('Llena todos los campos', esError: true);
       return;
     }
 
     setState(() => _isLoading = true);
-
     try {
-      // 1. Petición a Supabase
       final response = await Supabase.instance.client.auth.signInWithPassword(
-        email: email,
+        email: email, 
         password: password,
       );
-
-      final user = response.user;
-
-      // 2. Si las credenciales son válidas
-      if (user != null) {
-        // Asegurar que el usuario exista en la tabla 'usuario' de Supabase
-        await AuthHelper.asegurarRegistroUsuario(user);
-
+      
+      if (response.user != null) {
+        await AuthHelper.asegurarRegistroUsuario(response.user!);
+        
         final prefs = await SharedPreferences.getInstance();
         final token = response.session?.accessToken ?? '';
+        final nombre = AuthHelper.obtenerNombre(response.user!);
+        final rol = await AuthHelper.obtenerRolUsuario(user: response.user!);
 
-        // Obtener nombre y rol de forma robusta
-        final nombre = AuthHelper.obtenerNombre(user);
-        final rol = await AuthHelper.obtenerRolUsuario(user: user);
-
-        // Guardar datos en SharedPreferences para uso en la app
         await prefs.setString('auth_token', token);
-        await prefs.setString('user_id', user.id);
+        await prefs.setString('user_id', response.user!.id);
         await prefs.setString('user_name', nombre);
-        await prefs.setString('user_email', user.email ?? '');
+        await prefs.setString('user_email', response.user!.email ?? '');
         await prefs.setString('user_role', rol);
 
-        debugPrint('LOGIN EXITOSO -> Usuario: $nombre ($email), Rol detectado: $rol');
-
-        _mostrarNotificacion('¡Inicio de sesión exitoso! Bienvenido $nombre');
+        _mostrarNotificacion('¡Bienvenido $nombre!');
 
         if (mounted) {
-          // Redirigir según el rol
-          if (rol == 'admin' || rol == 'administrador') {
-            Navigator.pushNamedAndRemoveUntil(context, '/dashboard_admin', (route) => false);
-          } else {
-            Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-          }
+          Navigator.pushNamedAndRemoveUntil(
+            context, 
+            '/home', 
+            (route) => false,
+          );
         }
       }
-    } on AuthException catch (e) {
-      debugPrint("ERROR DE AUTENTICACIÓN SUPABASE: ${e.message}");
-      String mensajeError = e.message;
-      final lower = e.message.toLowerCase();
-      if (lower.contains('invalid login credentials') || lower.contains('invalid credentials')) {
-        mensajeError = 'Correo o contraseña incorrectos. Verifica tus datos.';
-      } else if (lower.contains('email not confirmed')) {
-        mensajeError = 'El correo aún no ha sido confirmado. Revisa tu bandeja de entrada.';
-      }
-      _mostrarNotificacion(mensajeError, esError: true);
     } catch (e) {
-      debugPrint("ERROR DE SUPABASE: $e");
-      _mostrarNotificacion('Error al iniciar sesión: $e', esError: true);
+      _mostrarNotificacion('Correo o contraseña incorrectos', esError: true);
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  // --- LÓGICA DE RECUPERAR CONTRASEÑA ---
-  Future<void> _ejecutarRecuperarPassword() async {
-    final email = _emailController.text.trim();
-
-    if (email.isEmpty) {
-      _mostrarNotificacion('Por favor ingresa tu correo electrónico', esError: true);
-      return;
-    }
-
-    if (!_esEmailValido(email)) {
-      _mostrarNotificacion('Por favor ingresa un correo electrónico válido', esError: true);
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      await Supabase.instance.client.auth.resetPasswordForEmail(email);
-      _mostrarNotificacion('Enlace enviado. Revisa tu correo o carpeta de spam.');
-      if (mounted) {
-        setState(() => _vistaActual = 0);
-      }
-    } on AuthException catch (e) {
-      debugPrint("ERROR AL ENVIAR CORREO DE RECUPERACIÓN: ${e.message}");
-      _mostrarNotificacion(e.message, esError: true);
-    } catch (e) {
-      debugPrint("ERROR INESPERADO: $e");
-      _mostrarNotificacion('Error al procesar la solicitud de recuperación', esError: true);
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

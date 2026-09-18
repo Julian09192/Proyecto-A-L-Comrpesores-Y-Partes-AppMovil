@@ -53,6 +53,24 @@ class _InicioViewState extends State<InicioView> {
     );
   }
 
+  void _filtrarMarca(String marca) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductsScreen(marcaInicial: marca),
+      ),
+    );
+  }
+
+  void _verTodasLasMarcas() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProductsScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -72,7 +90,10 @@ class _InicioViewState extends State<InicioView> {
           const SizedBox(height: 16),
           const TarjetaAsistencia(),
           const SizedBox(height: 22),
-          const SeccionMarcas(),
+          SeccionMarcas(
+            onMarcaSeleccionada: _filtrarMarca,
+            onVerTodas: _verTodasLasMarcas,
+          ),
           const SizedBox(height: 24),
           CategoriasPrincipales(onCategoriaTap: _filtrarCategoria),
           const SizedBox(height: 24),

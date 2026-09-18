@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import '../../models/products/producto_model.dart';
 import '../../services/products/producto_service.dart';
+import '../../services/products/cart_service.dart';
+import '../../services/products/favoritos_service.dart'; // 🚀 1. Importamos el FavoritosService
 import '../../widgets/product_card.dart';
 import '../home/search_screen.dart';
+import '../cart/cart_screen.dart';
 import 'detail_product.dart';
 import '../home/main_navigation.dart';
 
 class ProductsScreen extends StatefulWidget {
   final String? categoriaInicial;
+  final String? marcaInicial; 
   final bool showBackButton;
 
   const ProductsScreen({
     super.key,
     this.categoriaInicial,
+    this.marcaInicial,
     this.showBackButton = false,
   });
 
@@ -23,20 +28,23 @@ class ProductsScreen extends StatefulWidget {
 class _ProductsScreenState extends State<ProductsScreen> {
   int _selectedCategoryIndex = 0;
   final ProductoService _productoService = ProductoService();
+  final CartService _cartService = CartService();
+  final FavoritosService _favoritosService = FavoritosService(); // 🚀 2. Instanciamos el servicio de favoritos
+
   late Future<List<ProductoModel>> _futureProductos;
 
-  // Lista base de todos los productos para extraer marcas y límites de precio
   List<ProductoModel> _todosLosProductos = [];
   List<String> _marcasDisponibles = [];
 
-  // Filtros aplicados
   String? _marcaSeleccionada;
   RangeValues? _rangoPrecioSeleccionado;
   double _minPrecioGeneral = 0;
   double _maxPrecioGeneral = 10000000;
 
+  // 🚀 3. Añadimos 'Favoritos' a las categorías disponibles en el menú horizontal
   final List<String> categories = [
     'Todos',
+    'Favoritos',
     'Tornillo',
     'Pistón',
     'Aceite',
@@ -46,23 +54,38 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   void initState() {
     super.initState();
-    // Si viene desde la pantalla de Inicio, pre-selecciona el chip correspondiente
+    
+    _cartService.addListener(_actualizarContador);
+
     if (widget.categoriaInicial != null) {
       int index = categories.indexOf(widget.categoriaInicial!);
       if (index != -1) {
         _selectedCategoryIndex = index;
       }
     }
+    
+    if (widget.marcaInicial != null) {
+      _marcaSeleccionada = widget.marcaInicial;
+    }
+
     _cargarProductosIniciales();
   }
 
-  // Carga inicial para determinar marcas dinámicas y rango de precios
+  @override
+  void dispose() {
+    _cartService.removeListener(_actualizarContador);
+    super.dispose();
+  }
+
+  void _actualizarContador() {
+    if (mounted) setState(() {});
+  }
+
   Future<void> _cargarProductosIniciales() async {
     _cargarProductos();
     try {
       final base = await _productoService.filterByParams();
       if (mounted && base.isNotEmpty) {
-        // 🚀 Filtramos únicamente los productos activos (no suspendidos)
         final productosActivos = base.where((p) => !p.suspendido).toList();
 
         if (productosActivos.isEmpty) return;
@@ -92,16 +115,18 @@ class _ProductsScreenState extends State<ProductsScreen> {
     } catch (_) {}
   }
 
+  // 🚀 4. Lógica de carga actualizada para contemplar el filtro de 'Favoritos'
   void _cargarProductos() {
     final categoria = categories[_selectedCategoryIndex];
     setState(() {
-      _futureProductos = _productoService
-          .filterByParams(
-        tipo: categoria == 'Todos' ? null : categoria,
-      )
-          .then((productos) {
-        return productos.where((p) {
-          // 🚀 Regla estricta: Si está suspendido, se descarta de inmediato
+      _futureProductos = Future.microtask(() async {
+        // Si la categoría es 'Favoritos', no filtramos por tipo normal en la API base
+        List<ProductoModel> productosBase = await _productoService.filterByParams(
+          tipo: (categoria == 'Todos' || categoria == 'Favoritos') ? null : categoria,
+        );
+
+        // Filtramos suspendidos, marcas y precios
+        List<ProductoModel> filtrados = productosBase.where((p) {
           if (p.suspendido) return false;
 
           final cumpleMarca = _marcaSeleccionada == null ||
@@ -113,6 +138,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
           return cumpleMarca && cumplePrecio;
         }).toList();
+
+        // Si seleccionaron 'Favoritos', filtramos únicamente los IDs que estén en la base de datos
+        if (categoria == 'Favoritos') {
+          final idsFavoritos = await _favoritosService.obtenerIdsFavoritos();
+          filtrados = filtrados.where((p) => idsFavoritos.contains(p.id)).toList();
+        }
+
+        return filtrados;
       });
     });
   }
@@ -154,35 +187,21 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     children: [
                       const Text(
                         'Filtrar Productos',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F2537),
-                        ),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F2537)),
                       ),
                       TextButton(
                         onPressed: () {
                           setModalState(() {
                             tempMarca = null;
-                            tempRango = RangeValues(
-                              _minPrecioGeneral,
-                              _maxPrecioGeneral,
-                            );
+                            tempRango = RangeValues(_minPrecioGeneral, _maxPrecioGeneral);
                           });
                         },
-                        child: const Text(
-                          'Restablecer',
-                          style: TextStyle(
-                            color: Colors.redAccent,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                        child: const Text('Restablecer', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w700)),
                       ),
                     ],
                   ),
                   const Divider(),
                   const SizedBox(height: 10),
-
                   const Text('Rango de Precio', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF222222))),
                   const SizedBox(height: 6),
                   Row(
@@ -206,7 +225,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     },
                   ),
                   const SizedBox(height: 14),
-
                   const Text('Marcas Disponibles', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF222222))),
                   const SizedBox(height: 10),
                   _marcasDisponibles.isEmpty
@@ -236,7 +254,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           }).toList(),
                         ),
                   const SizedBox(height: 24),
-
                   SizedBox(
                     width: double.infinity,
                     height: 48,
@@ -287,41 +304,108 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     
-    // Si se abrió desde la pantalla principal, mostramos el botón de regresar
-    final bool modoSecundario = widget.categoriaInicial != null || widget.showBackButton;
+    final bool modoSecundario = widget.categoriaInicial != null || widget.marcaInicial != null || widget.showBackButton;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
-      // Agregamos un AppBar nativo si es una vista secundaria superpuesta
+      
       appBar: modoSecundario
           ? AppBar(
               backgroundColor: const Color(0xFFF7F8FA),
               elevation: 0,
-              centerTitle: true,
-              title: Text(
-                widget.categoriaInicial ?? 'Catálogo',
-                style: const TextStyle(color: Color(0xFF1E242B), fontWeight: FontWeight.w900, fontSize: 16),
+              scrolledUnderElevation: 0,
+              leadingWidth: 54,
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 10.0),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF2C3238), size: 22),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E242B)),
-                onPressed: () => Navigator.pop(context),
+              titleSpacing: 0,
+              title: SizedBox(
+                height: 32,
+                child: Image.asset(
+                  'assets/images/logo_ayl.png',
+                  fit: BoxFit.contain,
+                  alignment: Alignment.centerLeft,
+                  errorBuilder: (context, error, stackTrace) => Image.network(
+                    'https://res.cloudinary.com/duvoqozcl/image/upload/v1777394217/logo-ayl.png',
+                    fit: BoxFit.contain,
+                    alignment: Alignment.centerLeft,
+                    errorBuilder: (context, error, stackTrace) => const Text(
+                      'A&L COMPRESORES',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF2C3238),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
               ),
               actions: [
-                // 🚀 Botón para saltar directamente a MainNavigation
-                IconButton(
-                  icon: const Icon(Icons.grid_view_rounded, color: Color(0xFF1E242B)),
-                  tooltip: 'Ir al menú principal',
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MainNavigation()),
-                      (route) => false,
-                    );
-                  },
+                SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      IconButton(
+                        splashRadius: 22,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                        icon: const Icon(
+                          Icons.shopping_cart_outlined,
+                          color: Color(0xFF2C3238),
+                          size: 25,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CartScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      if (_cartService.totalItemsCount > 0)
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            decoration: const BoxDecoration(
+                              color: Colors.redAccent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '${_cartService.totalItemsCount}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 14),
               ],
             )
           : null,
+
       body: RefreshIndicator(
         onRefresh: () async {
           await _cargarProductosIniciales();
@@ -330,7 +414,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.only(
-            // Ajustamos el padding dinámicamente
             top: modoSecundario ? 16 : topPadding + 65,
             bottom: modoSecundario ? bottomPadding + 20 : bottomPadding + 90,
             left: 16,
@@ -339,7 +422,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Barra de búsqueda con botón de filtros integrado
               Row(
                 children: [
                   Expanded(
@@ -373,7 +455,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  // Botón de Filtros
                   Container(
                     height: 50,
                     width: 50,
@@ -400,7 +481,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
               ),
               const SizedBox(height: 18),
 
-              // Chips de categoría
               SizedBox(
                 height: 38,
                 child: ListView.separated(
@@ -446,7 +526,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Chips informativos si hay filtros aplicados
               if (_hayFiltrosActivos) ...[
                 Row(
                   children: [
@@ -470,7 +549,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 const SizedBox(height: 10),
               ],
 
-              // Título y Conteo
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -486,7 +564,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
               ),
               const SizedBox(height: 14),
 
-              // Lista de productos filtrados
               FutureBuilder<List<ProductoModel>>(
                 future: _futureProductos,
                 builder: (context, snapshot) {
