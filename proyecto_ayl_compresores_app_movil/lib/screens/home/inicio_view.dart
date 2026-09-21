@@ -1,121 +1,121 @@
-import 'package:flutter/material.dart';
-import '../../models/products/producto_model.dart';
-import '../../services/products/producto_service.dart';
-import '../productos/productos_screen.dart';
-import 'search_screen.dart';
+  import 'package:flutter/material.dart';
+  import '../../models/products/producto_model.dart';
+  import '../../services/products/producto_service.dart';
+  import '../productos/productos_screen.dart';
+  import 'search_screen.dart';
 
-// Importación de componentes modulares
-import './barra_busqueda_touch.dart';
-import './tarjeta_asistencia.dart';
-import './seccion_marcas.dart';
-import './categorias_principales.dart';
-import './productos_destacados.dart';
+  // Importación de componentes modulares
+  import './barra_busqueda_touch.dart';
+  import './tarjeta_asistencia.dart';
+  import './seccion_marcas.dart';
+  import './categorias_principales.dart';
+  import './productos_destacados.dart';
 
-class InicioView extends StatefulWidget {
-  const InicioView({super.key});
+  class InicioView extends StatefulWidget {
+    const InicioView({super.key});
 
-  @override
-  State<InicioView> createState() => _InicioViewState();
-}
-
-class _InicioViewState extends State<InicioView> {
-  final ProductoService _productoService = ProductoService();
-  late Future<List<ProductoModel>> _futureProductosDestacados;
-
-  @override
-  void initState() {
-    super.initState();
-    _futureProductosDestacados = _productoService.filterByParams();
+    @override
+    State<InicioView> createState() => _InicioViewState();
   }
 
-  // --- NAVEGACIÓN GENERAL ---
-  Route _crearRutaBusquedaDeslizante() {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => const SearchScreen(),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(1.0, 0.0);
-        const end = Offset.zero;
-        const curve = Curves.easeInOutCubic;
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-        var offsetAnimation = animation.drive(tween);
-        return SlideTransition(position: offsetAnimation, child: child);
-      },
-      transitionDuration: const Duration(milliseconds: 380),
-    );
-  }
+  class _InicioViewState extends State<InicioView> {
+    final ProductoService _productoService = ProductoService();
+    late Future<List<ProductoModel>> _futureProductosDestacados;
 
-  void _filtrarCategoria(String categoria) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProductsScreen(categoriaInicial: categoria),
-      ),
-    );
-  }
+    @override
+    void initState() {
+      super.initState();
+      _futureProductosDestacados = _productoService.filterByParams();
+    }
 
-  void _filtrarMarca(String marca) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProductsScreen(marcaInicial: marca),
-      ),
-    );
-  }
+    // --- NAVEGACIÓN GENERAL ---
+    Route _crearRutaBusquedaDeslizante() {
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const SearchScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOutCubic;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var offsetAnimation = animation.drive(tween);
+          return SlideTransition(position: offsetAnimation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 380),
+      );
+    }
 
-  void _verTodasLasMarcas() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ProductsScreen(),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final topPadding = MediaQuery.of(context).padding.top;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        top: topPadding + 65,
-        bottom: bottomPadding + 90,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          BarraBusquedaTouch(
-            onTap: () => Navigator.push(context, _crearRutaBusquedaDeslizante()),
-          ),
-          const SizedBox(height: 16),
-          const TarjetaAsistencia(),
-          const SizedBox(height: 22),
-          SeccionMarcas(
-            onMarcaSeleccionada: _filtrarMarca,
-            onVerTodas: _verTodasLasMarcas,
-          ),
-          const SizedBox(height: 24),
-          CategoriasPrincipales(onCategoriaTap: _filtrarCategoria),
-          const SizedBox(height: 24),
-          _construirTituloSeccion('Productos Destacados'),
-          ProductosDestacados(futureProductos: _futureProductosDestacados),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _construirTituloSeccion(String titulo) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Text(
-        titulo,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
-          color: Color(0xFF0F2537),
+    void _filtrarCategoria(String categoria) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProductsScreen(categoriaInicial: categoria),
         ),
-      ),
-    );
+      );
+    }
+
+    void _filtrarMarca(String marca) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProductsScreen(marcaInicial: marca),
+        ),
+      );
+    }
+
+    void _verTodasLasMarcas() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ProductsScreen(),
+        ),
+      );
+    }
+
+    @override
+    Widget build(BuildContext context) {
+      final topPadding = MediaQuery.of(context).padding.top;
+      final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+      return SingleChildScrollView(
+        padding: EdgeInsets.only(
+          top: topPadding + 65,
+          bottom: bottomPadding + 90,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BarraBusquedaTouch(
+              onTap: () => Navigator.push(context, _crearRutaBusquedaDeslizante()),
+            ),
+            const SizedBox(height: 16),
+            const TarjetaAsistencia(),
+            const SizedBox(height: 22),
+            SeccionMarcas(
+              onMarcaSeleccionada: _filtrarMarca,
+              onVerTodas: _verTodasLasMarcas,
+            ),
+            const SizedBox(height: 24),
+            CategoriasPrincipales(onCategoriaTap: _filtrarCategoria),
+            const SizedBox(height: 24),
+            _construirTituloSeccion('Productos Destacados'),
+            ProductosDestacados(futureProductos: _futureProductosDestacados),
+            const SizedBox(height: 20),
+          ],
+        ),
+      );
+    }
+
+    Widget _construirTituloSeccion(String titulo) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Text(
+          titulo,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0F2537),
+          ),
+        ),
+      );
+    }
   }
-}

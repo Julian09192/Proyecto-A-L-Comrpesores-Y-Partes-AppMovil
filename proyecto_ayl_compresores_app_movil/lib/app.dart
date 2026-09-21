@@ -10,6 +10,12 @@ import 'screens/admin/admin_reportes_view.dart';
 import 'screens/admin/admin_perfil_view.dart';
 import 'screens/cart/cart_screen.dart';
 import 'screens/Login/login_screen.dart';
+import 'screens/empleado/empleado_dashboard.dart'; 
+import 'screens/empleado/empleado_productos.dart';
+import 'screens/empleado/empleado_notificaciones.dart';
+import 'screens/empleado/empleado_bitacora_view.dart';
+import 'screens/empleado/empleado_reportes_view.dart';
+import 'screens/empleado/empleado_perfil_view.dart';
 
 class MiApp extends StatelessWidget {
   const MiApp({super.key});
@@ -24,20 +30,32 @@ class MiApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.grey[100], 
       ),
       
-      // initialRoute le dice a la app: "Cuando abras, ve directo a esta ruta"
-     initialRoute: '/splash',     
+      initialRoute: '/splash',    
+      
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/home': (context) => const MainNavigation(),
-        // Añade una ruta raíz '/' por si Supabase redirige al dominio principal
         '/': (context) => const MainNavigation(), 
+        
+        // Rutas principales con constructores directos
         '/dashboard_admin': (context) => const AdminDashboard(),
+        '/empleado_dashboard': (context) => const EmpleadoDashboard(),
+        
+        // Rutas del empleado
+        '/empleado_productos': (context) => EmpleadoProductos(),
+        '/empleado_notificaciones': (context) => EmpleadoNotificaciones(),
+        '/empleado_bitacora': (context) => EmpleadoBitacoraView(),
+        '/empleado_reportes': (context) => EmpleadoReportesView(),
+        '/empleado_perfil': (context) => EmpleadoPerfilView(),
+        
+        // Rutas del administrador
         '/admin_productos': (context) => const ProductsAdminScreen(),
         '/admin_notificaciones': (context) => const NotificationAdminScreen(),
         '/admin_bitacora': (context) => const AdminBitacoraView(),
         '/admin_usuarios': (context) => const AdminUsuariosView(),
         '/admin_reportes': (context) => const AdminReportesView(),
         '/admin_perfil': (context) => const AdminPerfilView(),
+        
         '/cart': (context) => const CartScreen(),
         '/login': (context) => const LoginScreen(),
       },

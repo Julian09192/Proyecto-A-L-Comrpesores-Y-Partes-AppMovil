@@ -148,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final bool autenticado = await _authBiometricos.authenticate(
         localizedReason: 'Usa tu huella o Face ID para iniciar sesión',
-        options: AuthenticationOptions( // <-- Sin la palabra const
+        options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,
         ),
@@ -198,8 +198,11 @@ class _LoginScreenState extends State<LoginScreen> {
       _mostrarNotificacion('¡Bienvenido de nuevo, $nombre!');
 
       if (mounted) {
-        if (rol == 'admin') {
+        if (rol == 'admin' || rol == 'administrador') {
           Navigator.pushNamedAndRemoveUntil(context, '/dashboard_admin', (route) => false);
+        } else if (rol == 'empleado') {
+          // 🚀 Redirección a la vista de empleado
+          Navigator.pushNamedAndRemoveUntil(context, '/empleado_dashboard', (route) => false);
         } else {
           Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         }
@@ -763,10 +766,17 @@ class _LoginScreenState extends State<LoginScreen> {
         _mostrarNotificacion('¡Bienvenido $nombre!');
 
         if (mounted) {
-          if (rol == 'admin') {
+          if (rol == 'admin' || rol == 'administrador') {
             Navigator.pushNamedAndRemoveUntil(
               context,
               '/dashboard_admin',
+              (route) => false,
+            );
+          } else if (rol == 'empleado') {
+            // 🚀 Redirección específica para el rol de empleado
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/empleado_dashboard',
               (route) => false,
             );
           } else {
