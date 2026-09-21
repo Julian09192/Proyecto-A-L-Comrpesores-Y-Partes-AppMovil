@@ -78,37 +78,45 @@ class _NotificationAdminScreenState extends State<NotificationAdminScreen> {
   Future<void> _markAllAsRead() async {
     try {
       await _notificacionesService.marcarTodasComoLeidas();
-      
-      setState(() {
-        for (var notification in notifications) {
-          notification['isNew'] = false;
-        }
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Todas las notificaciones fueron marcadas como leídas'),
-          backgroundColor: Colors.black87,
-          duration: Duration(seconds: 2),
-        ),
-      );
+
+      if (mounted) {
+        setState(() {
+          for (var notification in notifications) {
+            notification['isNew'] = false;
+          }
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Todas las notificaciones fueron marcadas como leídas'),
+            backgroundColor: Colors.black87,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al actualizar estado: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al actualizar estado: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
   Future<void> _deleteNotification(String id) async {
     try {
       await _notificacionesService.eliminarNotificacion(id);
-      setState(() {
-        notifications.removeWhere((item) => item['id'] == id);
-      });
+      if (mounted) {
+        setState(() {
+          notifications.removeWhere((item) => item['id'] == id);
+        });
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al eliminar: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al eliminar: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 

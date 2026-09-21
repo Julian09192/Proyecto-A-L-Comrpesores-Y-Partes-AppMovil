@@ -7,8 +7,12 @@ Future<void> main() async {
   // 1. Asegura que los componentes visuales estén listos antes de cargar cosas de internet
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Carga las llaves secretas de tu archivo .env
-  await dotenv.load(fileName: ".env");
+  // 2. Carga las llaves secretas de tu archivo .env protegiéndolo para entornos Web
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Advertencia: No se pudo cargar el archivo .env: $e");
+  }
 
   // 3. Inicializa la conexión con Supabase usando tu servicio
   await SupabaseService.initialize();

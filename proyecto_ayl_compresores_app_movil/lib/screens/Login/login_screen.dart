@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../services/user/auth_helper.dart';
 import '../../services/user/usuario_service.dart';
 import '../../services/products/cart_service.dart';
@@ -30,6 +32,17 @@ class _LoginScreenState extends State<LoginScreen> {
   int _totalOrdenes = 0;
   double _totalGastado = 0.0;
   bool _cargandoEstadisticas = true;
+
+  // Instancias para Biometría y Almacenamiento Seguro
+  final LocalAuthentication _authBiometricos = LocalAuthentication();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+    ),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
 
   @override
   void initState() {
@@ -103,6 +116,99 @@ class _LoginScreenState extends State<LoginScreen> {
         duration: const Duration(seconds: 4),
       ),
     );
+  }
+
+  Future<bool> _biometriaDisponible() async {
+    try {
+      final bool puedeAutenticar = await _authBiometricos.canCheckBiometrics;
+      final bool soportado = await _authBiometricos.isDeviceSupported();
+      return puedeAutenticar && soportado;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _guardarCredencialesBiometricas(String email, String password) async {
+    await _secureStorage.write(key: 'saved_email', value: email.trim());
+    await _secureStorage.write(key: 'saved_password', value: password);
+  }
+
+  Future<void> _limpiarCredencialesBiometricas() async {
+    await _secureStorage.delete(key: 'saved_email');
+    await _secureStorage.delete(key: 'saved_password');
+  }
+
+  Future<void> _iniciarSesionConBiometria() async {
+    try {
+      final bool disponible = await _biometriaDisponible();
+      if (!disponible) {
+        _mostrarNotificacion('La biometría no está disponible en este dispositivo.', esError: true);
+        return;
+      }
+
+      final bool autenticado = await _authBiometricos.authenticate(
+        localizedReason: 'Usa tu huella o Face ID para iniciar sesión',
+        options: AuthenticationOptions( // <-- Sin la palabra const
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+
+      if (!autenticado) {
+        _mostrarNotificacion('Autenticación cancelada.', esError: true);
+        return;
+      }
+
+      final emailGuardado = await _secureStorage.read(key: 'saved_email');
+      final passwordGuardada = await _secureStorage.read(key: 'saved_password');
+
+      if (emailGuardado == null || emailGuardado.isEmpty || passwordGuardada == null || passwordGuardada.isEmpty) {
+        _mostrarNotificacion('No hay sesión previa guardada. Inicia sesión con contraseña al menos una vez.', esError: true);
+        return;
+      }
+
+      setState(() => _isLoading = true);
+
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: emailGuardado,
+        password: passwordGuardada,
+      );
+
+      if (response.user == null) {
+        _mostrarNotificacion('No se pudo completar la autenticación biométrica.', esError: true);
+        return;
+      }
+
+      await AuthHelper.asegurarRegistroUsuario(response.user!);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = response.session?.accessToken ?? '';
+      final nombre = AuthHelper.obtenerNombre(response.user!);
+      final rol = await AuthHelper.obtenerRolUsuario(user: response.user!);
+
+      await prefs.setString('auth_token', token);
+      await prefs.setString('user_id', response.user!.id);
+      await prefs.setString('user_name', nombre);
+      await prefs.setString('user_email', response.user!.email ?? '');
+      await prefs.setString('user_role', rol);
+
+      await CartService().cargarCarritoUsuario();
+      await FavoritosService().cargarFavoritosUsuario();
+
+      _mostrarNotificacion('¡Bienvenido de nuevo, $nombre!');
+
+      if (mounted) {
+        if (rol == 'admin') {
+          Navigator.pushNamedAndRemoveUntil(context, '/dashboard_admin', (route) => false);
+        } else {
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        }
+      }
+    } catch (e) {
+      _mostrarNotificacion('Error en autenticación biométrica: $e', esError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -318,8 +424,8 @@ class _LoginScreenState extends State<LoginScreen> {
             onPressed: _isLoading ? null : () async {
               setState(() => _isLoading = true);
 
-              // 🚀 1. Limpia memoria de carrito y cierra sesión en Supabase
               await AuthHelper.cerrarSesion();
+              await _limpiarCredencialesBiometricas();
 
               if (mounted) {
                 setState(() => _isLoading = false);
@@ -500,6 +606,30 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 20),
         _construirBotonPrincipal('INICIAR SESIÓN', _ejecutarLogin),
+        const SizedBox(height: 15),
+        FutureBuilder<bool>(
+          future: _biometriaDisponible(),
+          builder: (context, snapshot) {
+            final disponible = snapshot.data ?? false;
+            if (!disponible) {
+              return const SizedBox.shrink();
+            }
+
+            return OutlinedButton.icon(
+              onPressed: _isLoading ? null : _iniciarSesionConBiometria,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+              ),
+              icon: const Icon(Icons.fingerprint_rounded, color: Color(0xFF222222)),
+              label: const Text(
+                'Entrar con Huella / Face ID',
+                style: TextStyle(color: Color(0xFF222222), fontWeight: FontWeight.w800, fontSize: 13),
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -582,6 +712,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.user != null) {
         await UsuarioService.registrarUsuarioEnBaseDeDatos(id: response.user!.id, nombre: nombre, correo: email, rol: 'cliente');
+
+        await _guardarCredencialesBiometricas(email, password);
+
         _mostrarNotificacion('¡Cuenta creada con éxito!');
         setState(() {});
       }
@@ -610,7 +743,9 @@ class _LoginScreenState extends State<LoginScreen> {
       
       if (response.user != null) {
         await AuthHelper.asegurarRegistroUsuario(response.user!);
-        
+
+        await _guardarCredencialesBiometricas(email, password);
+
         final prefs = await SharedPreferences.getInstance();
         final token = response.session?.accessToken ?? '';
         final nombre = AuthHelper.obtenerNombre(response.user!);
@@ -628,11 +763,19 @@ class _LoginScreenState extends State<LoginScreen> {
         _mostrarNotificacion('¡Bienvenido $nombre!');
 
         if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(
-            context, 
-            '/home', 
-            (route) => false,
-          );
+          if (rol == 'admin') {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/dashboard_admin',
+              (route) => false,
+            );
+          } else {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/home',
+              (route) => false,
+            );
+          }
         }
       }
     } catch (e) {

@@ -90,14 +90,18 @@ class _EditProductState extends State<EditProduct> {
       );
 
       if (imagenSeleccionada != null) {
-        setState(() {
-          _imagenLocalFile = File(imagenSeleccionada.path);
-        });
+        if (mounted) {
+          setState(() {
+            _imagenLocalFile = File(imagenSeleccionada.path);
+          });
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al obtener la imagen: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al obtener la imagen: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
