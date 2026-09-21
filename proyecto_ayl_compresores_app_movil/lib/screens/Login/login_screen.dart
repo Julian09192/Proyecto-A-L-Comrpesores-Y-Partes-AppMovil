@@ -1,3 +1,4 @@
+import '../empleado/empleado_dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -198,12 +199,18 @@ class _LoginScreenState extends State<LoginScreen> {
       _mostrarNotificacion('¡Bienvenido de nuevo, $nombre!');
 
       if (mounted) {
-        if (rol == 'admin') {
-          Navigator.pushNamedAndRemoveUntil(context, '/dashboard_admin', (route) => false);
-        } else {
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-        }
+      if (rol.toLowerCase() == 'admin') {
+        Navigator.pushNamedAndRemoveUntil(context, '/dashboard_admin', (route) => false);
+      } else if (rol.toLowerCase() == 'empleado') {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const EmpleadoDashboard()),
+          (route) => false,
+        );
+      } else {
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       }
+    }
     } catch (e) {
       _mostrarNotificacion('Error en autenticación biométrica: $e', esError: true);
     } finally {
@@ -763,20 +770,26 @@ class _LoginScreenState extends State<LoginScreen> {
         _mostrarNotificacion('¡Bienvenido $nombre!');
 
         if (mounted) {
-          if (rol == 'admin') {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/dashboard_admin',
-              (route) => false,
-            );
-          } else {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/home',
-              (route) => false,
-            );
-          }
+        if (rol.toLowerCase() == 'admin') {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/dashboard_admin',
+            (route) => false,
+          );
+        } else if (rol.toLowerCase() == 'empleado') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const EmpleadoDashboard()),
+            (route) => false,
+          );
+        } else {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/home',
+            (route) => false,
+          );
         }
+      }
       }
     } catch (e) {
       _mostrarNotificacion('Correo o contraseña incorrectos', esError: true);
