@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:proyecto_ayl_compresores_app_movil/screens/Login/login_screen.dart';
 import '../../services/products/cart_service.dart';
-import '../../services/user/auth_helper.dart'; // 🚀 Importante para obtener el nombre del usuario y cerrar sesión
+import '../../services/user/auth_helper.dart'; // Importante para obtener el nombre del usuario y cerrar sesión
 import 'inicio_view.dart';
 import '../productos/productos_screen.dart';
 import '../cart/cart_screen.dart';
