@@ -1,9 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/products/cart_service.dart';
 import 'pasarela_pago_screen.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
+
+  void _mostrarModalLoginRequerido(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFDB913).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.lock_outline_rounded, color: Color(0xFFFDB913), size: 28),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Inicia sesión para cotizar',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F2537)),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Debes acceder con tu cuenta para continuar con la cotización o compra y procesar el pedido de forma segura.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xFF7A837E), fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF222222),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pushNamed(context, '/login');
+                  },
+                  child: const Text(
+                    'INICIAR SESIÓN / REGISTRO',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12.5),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Volver al carrito', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +222,6 @@ class CartScreen extends StatelessWidget {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                // Miniatura del producto
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
                                   child: Container(
@@ -174,8 +241,6 @@ class CartScreen extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 14),
-
-                                // Nombre, marca y precio
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,8 +278,6 @@ class CartScreen extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-
-                                // Controles de cantidad modernos
                                 Container(
                                   decoration: BoxDecoration(
                                     color: Colors.grey.shade50,
@@ -260,8 +323,6 @@ class CartScreen extends StatelessWidget {
                         },
                       ),
                     ),
-
-                    // Resumen inferior corporativo
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -314,6 +375,15 @@ class CartScreen extends StatelessWidget {
                                   ),
                                 ),
                                 onPressed: () {
+                                  final user = Supabase.instance.client.auth.currentUser;
+                                  final session = Supabase.instance.client.auth.currentSession;
+
+                                  // Bloqueo estricto: tanto usuario como sesión deben existir
+                                  if (user == null || session == null) {
+                                    _mostrarModalLoginRequerido(context);
+                                    return;
+                                  }
+
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/products/cart_service.dart';
 import '../cart/cart_screen.dart';
 
@@ -54,14 +53,7 @@ class _DetalleProductoPageState extends State<DetalleProductoPage> {
   }
 
   void _agregarAlCarrito() {
-    final user = Supabase.instance.client.auth.currentUser;
-
-    // 🚀 Si no hay sesión iniciada, mostramos modal y detenemos el flujo
-    if (user == null) {
-      _mostrarModalRegistroCarrito();
-      return;
-    }
-
+    // Permite agregar productos al carrito sin requerir sesión iniciada
     _cartService.addItem(
       id: widget.id,
       nombre: widget.nombre,
@@ -71,73 +63,6 @@ class _DetalleProductoPageState extends State<DetalleProductoPage> {
     );
 
     _mostrarToastAnimado(context, '¡${widget.nombre} agregado al carrito!');
-  }
-
-  // 🚀 Modal para invitar al login si no tiene sesión
-  void _mostrarModalRegistroCarrito() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 54,
-                height: 54,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFDB913).withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.shopping_cart_outlined, color: Color(0xFFFDB913), size: 28),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '¡Inicia sesión para cotizar!',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F2537)),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Debes tener una cuenta activa para añadir equipos al carrito de compras y guardar tu pedido.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF7A837E), fontSize: 13, height: 1.4),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF222222),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pushNamed(context, '/login');
-                  },
-                  child: const Text(
-                    'INICIAR SESIÓN / REGISTRO',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12.5),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Ahora no', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   void _mostrarToastAnimado(BuildContext context, String mensaje) {
