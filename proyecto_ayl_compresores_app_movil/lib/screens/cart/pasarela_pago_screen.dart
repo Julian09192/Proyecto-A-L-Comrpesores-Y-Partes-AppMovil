@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/products/cart_item_model.dart';
 import '../../services/products/cart_service.dart';
 import '../../services/siigo/siigo_service.dart';
+import '../../services/user/auth_helper.dart';
 
 class PasarelaPagoScreen extends StatefulWidget {
   final List<CartItemModel> itemsCarrito;
@@ -36,9 +38,27 @@ class _PasarelaPagoScreenState extends State<PasarelaPagoScreen> {
   @override
   void initState() {
     super.initState();
-    // Elimina cualquier SnackBar persistente al abrir esta pantalla
+
+    // 🚀 GUARDIÁN DE ACCESO: Si no hay sesión, expulsa de inmediato
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ScaffoldMessenger.of(context).clearSnackBars();
+      
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Debes iniciar sesión para realizar una cotización o pago.'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      // Si tiene sesión, precargamos sus datos
+      _nombreController.text = AuthHelper.obtenerNombre(user);
+      _correoController.text = user.email ?? '';
     });
   }
 
@@ -231,6 +251,7 @@ class _PasarelaPagoScreenState extends State<PasarelaPagoScreen> {
       ),
     );
   }
+
   Widget _inputCampo(
     String etiqueta,
     String placeholder,
@@ -495,7 +516,7 @@ class _PasarelaPagoScreenState extends State<PasarelaPagoScreen> {
       ),
     );
   }
-// Vista de éxito después del pago
+
   Widget _vistaExito() {
     return Column(
       children: [
@@ -561,7 +582,6 @@ class _PasarelaPagoScreenState extends State<PasarelaPagoScreen> {
               ),
             ),
             onPressed: () {
-              // Retornar directamente al catálogo principal
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
             child: const Text(

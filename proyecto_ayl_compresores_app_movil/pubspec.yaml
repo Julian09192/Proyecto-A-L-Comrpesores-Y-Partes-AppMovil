@@ -16,6 +16,13 @@ dependencies:
   http: ^1.6.0
   flutter_dotenv: ^6.0.1
   shared_preferences: ^2.5.5
+<<<<<<< HEAD
+=======
+  image_picker: ^1.2.3
+  universal_html: ^2.3.0
+  local_auth: ^2.3.0
+  flutter_secure_storage: ^9.2.2
+>>>>>>> 5fb2496e60237204d66c3e49f2d2812ce83cd011
 
 dev_dependencies:
   flutter_test:
@@ -27,6 +34,7 @@ flutter:
 
   assets:
     - assets/logo-ayl.jpeg
+<<<<<<< HEAD
     - .env
 
   # To add assets to your application, add an assets section, like this:
@@ -60,3 +68,6 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
+=======
+    - .env
+>>>>>>> 5fb2496e60237204d66c3e49f2d2812ce83cd011
