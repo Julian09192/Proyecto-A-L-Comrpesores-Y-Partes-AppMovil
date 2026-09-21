@@ -72,6 +72,7 @@ class ProductosDestacados extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) => DetalleProductoPage(
+                              id: producto.id.toString(),
                               nombre: producto.nombre,
                               marca: producto.marca,
                               precio: '\$${producto.precio.toStringAsFixed(0)}',

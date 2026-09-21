@@ -3,9 +3,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/user/auth_helper.dart';
 import '../../services/user/usuario_service.dart';
-import '../productos/productos_screen.dart'; // 🚀 Vista de favoritos
-import 'recuperar_password_screen.dart'; // 🚀 Vista independiente de recuperar contraseña
-import 'cambiar_password_screen.dart'; // 🚀 Vista independiente de cambiar contraseña
+import '../../services/products/cart_service.dart';
+import '../productos/productos_screen.dart';
+import 'recuperar_password_screen.dart';
+import 'cambiar_password_screen.dart';
+import '../../services/products/favoritos_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   int _vistaActual = 0; // 0 = Login, 1 = Registro
 
-  // 🚀 Variables de estadísticas del usuario (Tabla 'orden')
   int _totalOrdenes = 0;
   double _totalGastado = 0.0;
   bool _cargandoEstadisticas = true;
@@ -45,7 +46,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // 🚀 Consulta a la tabla 'orden' de Supabase para obtener estadísticas reales
   Future<void> _cargarDatosEstadisticos() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
           .select('total')
           .eq('usuario_id', user.id);
 
-      if (response != null) {
+      if (response.isNotEmpty) {
         final listaOrdenes = response as List;
         int cantidad = listaOrdenes.length;
         double sumaTotal = 0.0;
@@ -110,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final currentUser = Supabase.instance.client.auth.currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFC), // Fondo sutil corporativo
+      backgroundColor: const Color(0xFFFAFAFC),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFAFAFC),
         elevation: 0,
@@ -135,9 +135,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ==========================================
-  // VISTA DE PERFIL REDISEÑADA (ESTÁNDAR EMPRESARIAL)
-  // ==========================================
   Widget _construirPanelPerfilEstilizado(User user) {
     final nombreUsuario = AuthHelper.obtenerNombre(user);
 
@@ -145,8 +142,6 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 10),
-        
-        // 1. Cabecera del Perfil (Avatar + Nombre + Estatus)
         Center(
           child: Column(
             children: [
@@ -187,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF10B981), // Verde verificación de estatus
+                        color: Color(0xFF10B981),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.check, size: 14, color: Colors.white),
@@ -219,7 +214,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 28),
 
-        // 2. Tarjetas de Métricas Ejecutivas (Órdenes y Total Gastado)
         Row(
           children: [
             Expanded(
@@ -241,7 +235,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 28),
 
-        // 3. Menú de Navegación de Opciones de Cuenta
         const Text(
           'CONFIGURACIÓN Y ACTIVIDAD',
           style: TextStyle(
@@ -313,7 +306,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 32),
 
-        // 4. Botón de Cerrar Sesión Corporativo
         SizedBox(
           height: 52,
           child: TextButton.icon(
@@ -325,7 +317,10 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             onPressed: _isLoading ? null : () async {
               setState(() => _isLoading = true);
+
+              // 🚀 1. Limpia memoria de carrito y cierra sesión en Supabase
               await AuthHelper.cerrarSesion();
+
               if (mounted) {
                 setState(() => _isLoading = false);
                 _mostrarNotificacion('Sesión cerrada correctamente');
@@ -432,7 +427,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // --- FLUJO DE AUTENTICACIÓN (LOGIN / REGISTRO) ---
   Widget _construirFlujoAutenticacion() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -627,6 +621,9 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setString('user_name', nombre);
         await prefs.setString('user_email', response.user!.email ?? '');
         await prefs.setString('user_role', rol);
+
+        await CartService().cargarCarritoUsuario();
+        await FavoritosService().cargarFavoritosUsuario();
 
         _mostrarNotificacion('¡Bienvenido $nombre!');
 

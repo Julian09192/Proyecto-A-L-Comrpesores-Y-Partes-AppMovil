@@ -1,110 +1,121 @@
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class FavoritosService {
-  final _supabase = Supabase.instance.client;
+class FavoritosService extends ChangeNotifier {
+  static final FavoritosService _instance = FavoritosService._internal();
+  factory FavoritosService() => _instance;
+  FavoritosService._internal();
 
-  // 1. Verifica si el usuario actual tiene rol 'cliente'
-  Future<bool> _esClienteValido() async {
+  final SupabaseClient _supabase = Supabase.instance.client;
+
+  final Set<String> _favoritosIds = {};
+
+  Set<String> get favoritosIds => Set.unmodifiable(_favoritosIds);
+
+  /// Devuelve los IDs como Set o List para compatibilidad con productos_screen
+  Future<Set<String>> obtenerIdsFavoritos() async {
     final user = _supabase.auth.currentUser;
+    // Si no hay sesión, no hay favoritos que cargar
     if (user == null) {
-      print('DEBUG: No hay usuario logueado.');
-      return false;
+      _favoritosIds.clear();
+      return {};
     }
 
-    try {
-      print('DEBUG: Buscando rol para el correo -> ${user.email}');
-      
-      // 🚀 CORRECCIÓN APLICADA: 'usuario' sin la 's' final
-      final data = await _supabase
-          .from('usuario')
-          .select('rol')
-          .eq('correo', user.email!)
-          .maybeSingle();
-          
-      print('DEBUG: Respuesta de la tabla usuario -> $data');
-
-      // Si data es null, significa que no existe en tu tabla o RLS lo bloquea
-      if (data == null) {
-        print('DEBUG: No se encontró el correo en la tabla o hubo un error.');
-        return false;
-      }
-
-      // Limpiamos espacios y pasamos a minúsculas
-      final rol = data['rol'].toString().trim().toLowerCase();
-      print('DEBUG: Rol detectado -> $rol');
-      
-      return rol == 'cliente';
-    } catch (e) {
-      print('DEBUG: Error de Supabase al buscar el rol -> $e');
-      return false;
+    if (_favoritosIds.isEmpty) {
+      await cargarFavoritosUsuario();
     }
+    return _favoritosIds;
   }
 
-  Future<List<int>> obtenerIdsFavoritos() async {
+  /// Verifica si un ID está en favoritos (acepta String o int)
+  bool esFavorito(dynamic productoId) {
+    if (productoId == null) return false;
+    return _favoritosIds.contains(productoId.toString());
+  }
+
+  // ==========================================
+  // GESTIÓN DE SESIÓN (LOGIN / LOGOUT)
+  // ==========================================
+
+  Future<void> cargarFavoritosUsuario() async {
     final user = _supabase.auth.currentUser;
-    if (user == null) return [];
+    if (user == null) {
+      _favoritosIds.clear();
+      notifyListeners();
+      return;
+    }
 
     try {
-      final data = await _supabase
+      final response = await _supabase
           .from('favoritos')
           .select('producto_id')
           .eq('usuario_id', user.id);
-          
-      return (data as List).map((item) => item['producto_id'] as int).toList();
+
+      _favoritosIds.clear();
+      for (var row in (response as List)) {
+        if (row['producto_id'] != null) {
+          _favoritosIds.add(row['producto_id'].toString());
+        }
+      }
+      notifyListeners();
     } catch (e) {
-      print('DEBUG: Error al obtener IDs de favoritos -> $e');
-      return [];
+      debugPrint('Error al cargar favoritos de Supabase: $e');
     }
   }
 
-  // 2. Consulta si un producto ya está en favoritos
-  Future<bool> esFavorito(int productoId) async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return false;
-
-    try {
-      final data = await _supabase
-          .from('favoritos')
-          .select('id')
-          .eq('usuario_id', user.id)
-          .eq('producto_id', productoId)
-          .maybeSingle();
-          
-      return data != null;
-    } catch (e) {
-      return false;
-    }
+  void limpiarMemoriaLogout() {
+    _favoritosIds.clear();
+    notifyListeners();
   }
 
-  // 3. Agrega o quita el favorito si cumple los requisitos
-  Future<bool> toggleFavorito(int productoId) async {
+  // ==========================================
+  // OPERACIONES DE FAVORITOS (TOGGLE)
+  // ==========================================
+
+  Future<void> toggleFavorito(dynamic productoId) async {
     final user = _supabase.auth.currentUser;
-    
-    // Si no está logueado, lanzamos una excepción para que la UI muestre el aviso
-    if (user == null) throw Exception('no_auth');
 
-    // Validamos el rol
-    final esCliente = await _esClienteValido();
-    if (!esCliente) throw Exception('no_cliente');
+    // 🚀 1. Si no hay sesión, lanzamos 'no_auth' para que la UI lo atrape
+    if (user == null) {
+      throw 'no_auth';
+    }
 
-    // Revisamos si ya es favorito
-    final existe = await esFavorito(productoId);
+    final idStr = productoId.toString();
+    final pId = int.tryParse(idStr);
 
-    if (existe) {
-      // Si ya existe, lo eliminamos (Quitar like)
-      await _supabase
-          .from('favoritos')
-          .delete()
-          .eq('usuario_id', user.id)
-          .eq('producto_id', productoId);
-      return false;
+    if (pId == null) {
+      debugPrint('⚠️ [FavoritosService] El id "$productoId" no es numérico.');
+      return;
+    }
+
+    if (_favoritosIds.contains(idStr)) {
+      _favoritosIds.remove(idStr);
+      notifyListeners();
+
+      try {
+        await _supabase
+            .from('favoritos')
+            .delete()
+            .eq('usuario_id', user.id)
+            .eq('producto_id', pId);
+      } catch (e) {
+        debugPrint('Error eliminando favorito de Supabase: $e');
+      }
     } else {
-      // Si no existe, lo insertamos (Dar like)
-      await _supabase.from('favoritos').insert({
-        'usuario_id': user.id,
-        'producto_id': productoId,
-      });
-      return true;
+      _favoritosIds.add(idStr);
+      notifyListeners();
+
+      try {
+        await _supabase.from('favoritos').upsert(
+          {
+            'usuario_id': user.id,
+            'producto_id': pId,
+          },
+          onConflict: 'usuario_id,producto_id',
+        );
+      } catch (e) {
+        debugPrint('Error agregando favorito en Supabase: $e');
+      }
     }
   }
 }

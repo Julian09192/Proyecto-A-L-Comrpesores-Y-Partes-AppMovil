@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'usuario_service.dart';
+import '../products/cart_service.dart';
+import '../products/favoritos_service.dart';
 
 class AuthHelper {
   /// Determina de forma precisa y robusta el rol del usuario autenticado
@@ -222,6 +224,8 @@ class AuthHelper {
 
   /// Cierra sesión de Supabase y limpia SharedPreferences
   static Future<void> cerrarSesion() async {
+    CartService().limpiarMemoriaLogout();
+    FavoritosService().limpiarMemoriaLogout();
     // 1. Limpiar preferencias primero para que la UI se actualice inmediatamente
     try {
       final prefs = await SharedPreferences.getInstance();

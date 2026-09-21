@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/products/producto_model.dart';
 import '../services/products/favoritos_service.dart';
 
@@ -23,13 +24,25 @@ class _ProductoCardState extends State<ProductoCard> {
   @override
   void initState() {
     super.initState();
+    _favoritosService.addListener(_onServiceUpdate);
     _cargarEstadoFavorito();
   }
 
-  Future<void> _cargarEstadoFavorito() async {
-    // Leemos directo desde la base de datos de Supabase
-    final estado = await _favoritosService.esFavorito(widget.producto.id!);
+  @override
+  void dispose() {
+    _favoritosService.removeListener(_onServiceUpdate);
+    super.dispose();
+  }
+
+  void _onServiceUpdate() {
     if (mounted) {
+      _cargarEstadoFavorito();
+    }
+  }
+
+  void _cargarEstadoFavorito() {
+    final estado = _favoritosService.esFavorito(widget.producto.id.toString());
+    if (mounted && _esFavorito != estado) {
       setState(() {
         _esFavorito = estado;
       });
@@ -37,15 +50,24 @@ class _ProductoCardState extends State<ProductoCard> {
   }
 
   Future<void> _toggleFavorito() async {
-    // Cambio visual inmediato para que se sienta súper rápido
+    final user = Supabase.instance.client.auth.currentUser;
+
+    // 🚀 Si no hay sesión iniciada, ni siquiera cambiamos el color y abrimos el modal
+    if (user == null) {
+      _mostrarModalRegistro();
+      return;
+    }
+
+    // Cambio visual inmediato
     setState(() => _esFavorito = !_esFavorito);
 
     try {
-      // Intentamos procesarlo en Supabase
-      await _favoritosService.toggleFavorito(widget.producto.id!);
+      await _favoritosService.toggleFavorito(widget.producto.id.toString());
     } catch (e) {
-      // Si falla, revertimos el color del corazón
-      setState(() => _esFavorito = !_esFavorito);
+      // Revertimos ante error o falta de sesión
+      if (mounted) {
+        setState(() => _esFavorito = !_esFavorito);
+      }
 
       if (e.toString().contains('no_auth')) {
         _mostrarModalRegistro();
@@ -55,7 +77,7 @@ class _ProductoCardState extends State<ProductoCard> {
     }
   }
 
-  // 🚀 EL MODAL PARA INVITAR A REGISTRARSE
+  // 🚀 Modal para invitar a registrarse / iniciar sesión
   void _mostrarModalRegistro() {
     showModalBottomSheet(
       context: context,
@@ -102,7 +124,6 @@ class _ProductoCardState extends State<ProductoCard> {
                   ),
                   onPressed: () {
                     Navigator.pop(context);
-                    // Asegúrate de que esta sea la ruta de tu login
                     Navigator.pushNamed(context, '/login'); 
                   },
                   child: const Text('INICIAR SESIÓN / REGISTRO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12.5)),
@@ -120,7 +141,6 @@ class _ProductoCardState extends State<ProductoCard> {
     );
   }
 
-  // Aviso si un Admin/Empleado intenta guardar favoritos
   void _mostrarAvisoRol() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

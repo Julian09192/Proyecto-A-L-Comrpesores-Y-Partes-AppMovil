@@ -310,6 +310,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => DetalleProductoPage(
+                            id: producto.id.toString(),
                             nombre: producto.nombre,
                             marca: producto.marca,
                             precio: '\$${producto.precio.toStringAsFixed(0)}',
@@ -439,6 +440,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => DetalleProductoPage(
+                        id: producto.id.toString(),
                         nombre: producto.nombre,
                         marca: producto.marca,
                         precio: '\$${producto.precio.toStringAsFixed(0)}',

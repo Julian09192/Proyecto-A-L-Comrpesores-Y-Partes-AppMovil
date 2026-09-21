@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import '../../models/products/producto_model.dart';
 import '../../services/products/producto_service.dart';
 import '../../services/products/cart_service.dart';
-import '../../services/products/favoritos_service.dart'; // 🚀 1. Importamos el FavoritosService
+import '../../services/products/favoritos_service.dart';
 import '../../widgets/product_card.dart';
 import '../home/search_screen.dart';
 import '../cart/cart_screen.dart';
 import 'detail_product.dart';
-import '../home/main_navigation.dart';
 
 class ProductsScreen extends StatefulWidget {
   final String? categoriaInicial;
@@ -29,7 +28,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   int _selectedCategoryIndex = 0;
   final ProductoService _productoService = ProductoService();
   final CartService _cartService = CartService();
-  final FavoritosService _favoritosService = FavoritosService(); // 🚀 2. Instanciamos el servicio de favoritos
+  final FavoritosService _favoritosService = FavoritosService();
 
   late Future<List<ProductoModel>> _futureProductos;
 
@@ -41,7 +40,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
   double _minPrecioGeneral = 0;
   double _maxPrecioGeneral = 10000000;
 
-  // 🚀 3. Añadimos 'Favoritos' a las categorías disponibles en el menú horizontal
   final List<String> categories = [
     'Todos',
     'Favoritos',
@@ -54,7 +52,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   void initState() {
     super.initState();
-    
+    FavoritosService().addListener(_onFavoritosChanged);
     _cartService.addListener(_actualizarContador);
 
     if (widget.categoriaInicial != null) {
@@ -74,9 +72,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   void dispose() {
     _cartService.removeListener(_actualizarContador);
+    FavoritosService().removeListener(_onFavoritosChanged);
     super.dispose();
   }
 
+  void _onFavoritosChanged() {
+    if (mounted) {
+      _cargarProductos(); 
+    }
+  }
+  
   void _actualizarContador() {
     if (mounted) setState(() {});
   }
@@ -111,22 +116,30 @@ class _ProductsScreenState extends State<ProductsScreen> {
           _maxPrecioGeneral = max;
           _rangoPrecioSeleccionado = RangeValues(min, max);
         });
+
+        _cargarProductos();
       }
     } catch (_) {}
   }
 
-  // 🚀 4. Lógica de carga actualizada para contemplar el filtro de 'Favoritos'
   void _cargarProductos() {
     final categoria = categories[_selectedCategoryIndex];
     setState(() {
       _futureProductos = Future.microtask(() async {
-        // Si la categoría es 'Favoritos', no filtramos por tipo normal en la API base
-        List<ProductoModel> productosBase = await _productoService.filterByParams(
-          tipo: (categoria == 'Todos' || categoria == 'Favoritos') ? null : categoria,
-        );
+        List<ProductoModel> base;
 
-        // Filtramos suspendidos, marcas y precios
-        List<ProductoModel> filtrados = productosBase.where((p) {
+        if (_todosLosProductos.isNotEmpty) {
+          base = _todosLosProductos;
+          if (categoria != 'Todos' && categoria != 'Favoritos') {
+            base = base.where((p) => p.tipo.toLowerCase() == categoria.toLowerCase()).toList();
+          }
+        } else {
+          base = await _productoService.filterByParams(
+            tipo: (categoria == 'Todos' || categoria == 'Favoritos') ? null : categoria,
+          );
+        }
+
+        List<ProductoModel> filtrados = base.where((p) {
           if (p.suspendido) return false;
 
           final cumpleMarca = _marcaSeleccionada == null ||
@@ -139,10 +152,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
           return cumpleMarca && cumplePrecio;
         }).toList();
 
-        // Si seleccionaron 'Favoritos', filtramos únicamente los IDs que estén en la base de datos
+        // 🚀 FILTRO EXACTO DE FAVORITOS
         if (categoria == 'Favoritos') {
           final idsFavoritos = await _favoritosService.obtenerIdsFavoritos();
-          filtrados = filtrados.where((p) => idsFavoritos.contains(p.id)).toList();
+  
+          filtrados = filtrados.where((p) {
+            return idsFavoritos.contains(p.id.toString());
+          }).toList();
         }
 
         return filtrados;
@@ -615,11 +631,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => DetalleProductoPage(
+                                  id: producto.id.toString(),
                                   nombre: producto.nombre,
                                   marca: producto.marca,
                                   precio: '\$${producto.precio.toStringAsFixed(0)}',
                                   imagenUrl: producto.imagenUrl ?? '',
-                                  descripcion: producto.caracteristicas.isNotEmpty ? producto.caracteristicas : 'Sin descripción técnica disponible.',
+                                  descripcion: producto.caracteristicas.isNotEmpty
+                                    ? producto.caracteristicas
+                                  : 'Sin descripción técnica disponible.',
                                 ),
                               ),
                             );

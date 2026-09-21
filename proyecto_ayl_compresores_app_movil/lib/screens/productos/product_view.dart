@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'detail_product.dart'; 
-import '../home/main_navigation.dart';
 
 class ProductosPage extends StatelessWidget {
   const ProductosPage({super.key});
@@ -273,6 +272,7 @@ class ProductosPage extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) => DetalleProductoPage(
+                              id: (producto['id'] ?? producto['id_producto']).toString(),
                               nombre: producto['nombre'],
                               marca: producto['tags'][0],
                               precio: producto['precio'],

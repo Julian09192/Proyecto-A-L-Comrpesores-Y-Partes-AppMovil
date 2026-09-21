@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:universal_html/html.dart' as html;
 import 'package:proyecto_ayl_compresores_app_movil/models/reportes/reporte_model.dart';
 import 'package:proyecto_ayl_compresores_app_movil/services/reporte/reporte_service.dart';
 import '../../widgets/admin/navbar_admin.dart';
@@ -87,6 +89,52 @@ class _AdminReportesViewState extends State<AdminReportesView> {
     return filtrados;
   }
 
+  // ==========================================
+  // LÓGICA DE EXPORTACIÓN (CSV / EXCEL)
+  // ==========================================
+
+  void _exportarACSV(List<ReporteProducto> productos) {
+    if (productos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay productos para exportar')),
+      );
+      return;
+    }
+
+    // Cabecera del archivo
+    final StringBuffer csvBuffer = StringBuffer();
+    // BOM UTF-8 para que Excel reconozca tildes y caracteres en español
+    csvBuffer.write('\uFEFF');
+    csvBuffer.writeln('Producto;Código Interno;Tipo;Marca;Precio;Stock Total;Estado');
+
+    for (var p in productos) {
+      final nombre = p.nombre.replaceAll(';', ',');
+      final codigo = p.codigoInterno.replaceAll(';', ',');
+      final tipo = p.tipo.replaceAll(';', ',');
+      final marca = p.marca.replaceAll(';', ',');
+      final precio = p.precio.toStringAsFixed(0);
+      final stock = p.stockTotal.toString();
+      final estado = p.suspendido ? 'Suspendido' : 'Activo';
+
+      csvBuffer.writeln('$nombre;$codigo;$tipo;$marca;$precio;$stock;$estado');
+    }
+
+    final bytes = utf8.encode(csvBuffer.toString());
+    final blob = html.Blob([bytes], 'text/csv;charset=utf-8');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    html.AnchorElement(href: url)
+        ..setAttribute('download', 'reporte_inventario_${DateTime.now().millisecondsSinceEpoch}.csv')
+        ..click();
+    html.Url.revokeObjectUrl(url);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Archivo CSV generado y descargado con éxito.'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final productos = _obtenerProductosProcesados();
@@ -107,7 +155,16 @@ class _AdminReportesViewState extends State<AdminReportesView> {
         backgroundColor: const Color(0xFF1E1E24),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          IconButton(icon: const Icon(Icons.sync), onPressed: _cargarReporte),
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: 'Exportar a CSV',
+            onPressed: () => _exportarACSV(productos),
+          ),
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'Refrescar datos',
+            onPressed: _cargarReporte,
+          ),
         ],
       ),
       body: _cargando
@@ -161,7 +218,6 @@ class _AdminReportesViewState extends State<AdminReportesView> {
             ),
             const SizedBox(height: 14),
 
-            // Dropdown 1: Categoría a ancho completo
             DropdownButtonFormField<String>(
               isExpanded: true,
               initialValue: categorias.contains(_filtroCategoria) ? _filtroCategoria : 'todas',
@@ -190,7 +246,6 @@ class _AdminReportesViewState extends State<AdminReportesView> {
             ),
             const SizedBox(height: 12),
 
-            // Dropdown 2: Proveedor / Marca a ancho completo
             DropdownButtonFormField<String>(
               isExpanded: true,
               initialValue: proveedores.contains(_filtroProveedor) ? _filtroProveedor : 'todos',
@@ -360,7 +415,24 @@ class _AdminReportesViewState extends State<AdminReportesView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Productos del Reporte', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Productos del Reporte', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E1E24),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.download_rounded, size: 16),
+                  label: const Text('Exportar CSV', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  onPressed: () => _exportarACSV(productos),
+                ),
+              ],
+            ),
             const SizedBox(height: 10),
             TextField(
               controller: _searchController,
