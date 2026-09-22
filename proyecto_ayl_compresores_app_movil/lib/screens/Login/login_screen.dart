@@ -221,6 +221,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = Supabase.instance.client.auth.currentUser;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFC),
@@ -238,11 +240,19 @@ class _LoginScreenState extends State<LoginScreen> {
             : null, 
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-          child: currentUser == null 
-              ? _construirFlujoAutenticacion() 
-              : _construirPanelPerfilEstilizado(currentUser),
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 20.0,
+              right: 20.0,
+              top: 10.0,
+              bottom: isKeyboardOpen ? 20.0 : bottomPadding + 95,
+            ),
+            child: currentUser == null 
+                ? _construirFlujoAutenticacion() 
+                : _construirPanelPerfilEstilizado(currentUser),
+          ),
         ),
       ),
     );
@@ -455,7 +465,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildMetricCard({required String title, required String value, required IconData icon}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -474,17 +484,32 @@ class _LoginScreenState extends State<LoginScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: const TextStyle(color: Color(0xFF7A837E), fontSize: 11.5, fontWeight: FontWeight.w700),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF7A837E), 
+                    fontSize: 11.5, 
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
+              const SizedBox(width: 4),
               Icon(icon, color: const Color(0xFFFDB913), size: 18),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(color: Color(0xFF0F2537), fontSize: 20, fontWeight: FontWeight.w900),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF0F2537), 
+              fontSize: 20, 
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ],
       ),

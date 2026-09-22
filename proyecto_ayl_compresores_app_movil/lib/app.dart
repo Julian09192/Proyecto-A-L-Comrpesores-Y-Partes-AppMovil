@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/splash/splash_screen.dart'; 
+import 'screens/splash/splash_screen.dart';
 import 'screens/home/main_navigation.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/admin/admin_productos.dart';
@@ -19,20 +19,19 @@ class MiApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'A&L Compresores y Partes',
-      debugShowCheckedModeBanner: false, 
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: Colors.amber, 
-        scaffoldBackgroundColor: Colors.grey[100], 
+        primaryColor: Colors.amber,
+        scaffoldBackgroundColor: Colors.grey[100],
       ),
       
-      initialRoute: '/splash',    
-      
+      // initialRoute le dice a la app: "Cuando abras, ve directo a esta ruta"
+     initialRoute: '/splash',     
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/home': (context) => const MainNavigation(),
+        // Añade una ruta raíz '/' por si Supabase redirige al dominio principal
         '/': (context) => const MainNavigation(), 
-        
-        // Rutas principales con constructores directos
         '/dashboard_admin': (context) => const AdminDashboard(),
         '/empleado_dashboard': (context) => const EmpleadoDashboard(),
         '/admin_productos': (context) => const ProductsAdminScreen(),

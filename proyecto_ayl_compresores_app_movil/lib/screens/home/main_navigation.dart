@@ -54,6 +54,7 @@ class _MainNavigationState extends State<MainNavigation> {
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final int itemCount = _cartService.totalItemsCount;
     
     // 🚀 Verificamos el estado de sesión actual para el icono superior
@@ -63,6 +64,7 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       extendBody: true,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // 1. Contenido principal
@@ -287,104 +289,115 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
 
           // 3. Barra Inferior Flotante Glass con Animación Deslizante
-          Positioned(
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
             left: 20,
             right: 20,
-            bottom: bottomPadding > 0 ? bottomPadding + 6 : 18,
-            child: Container(
-              height: 64,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 25,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(32),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(32),
-                      color: Colors.white.withValues(alpha: 0.38),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.65),
-                        width: 1.2,
+            bottom: isKeyboardOpen 
+                ? -100 
+                : (bottomPadding > 0 ? bottomPadding + 6 : 18),
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: isKeyboardOpen ? 0.0 : 1.0,
+              child: IgnorePointer(
+                ignoring: isKeyboardOpen,
+                child: Container(
+                  height: 64,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 25,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final double itemWidth =
-                            constraints.maxWidth / _iconos.length;
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(32),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(32),
+                          color: Colors.white.withValues(alpha: 0.38),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.65),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final double itemWidth =
+                                constraints.maxWidth / _iconos.length;
 
-                        return Stack(
-                          alignment: Alignment.centerLeft,
-                          children: [
-                            // Pastilla blanca animada
-                            AnimatedPositioned(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.fastOutSlowIn,
-                              left: _currentIndex * itemWidth +
-                                  (itemWidth - 54) / 2,
-                              child: Container(
-                                width: 54,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.92),
-                                  borderRadius: BorderRadius.circular(22),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black
-                                          .withValues(alpha: 0.06),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 3),
+                            return Stack(
+                              alignment: Alignment.centerLeft,
+                              children: [
+                                // Pastilla blanca animada
+                                AnimatedPositioned(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.fastOutSlowIn,
+                                  left: _currentIndex * itemWidth +
+                                      (itemWidth - 54) / 2,
+                                  child: Container(
+                                    width: 54,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.92),
+                                      borderRadius: BorderRadius.circular(22),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black
+                                              .withValues(alpha: 0.06),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
 
-                            // Fila de iconos interactivos
-                            Row(
-                              children: List.generate(_iconos.length, (index) {
-                                final isSelected = _currentIndex == index;
-                                return Expanded(
-                                  child: GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () {
-                                      setState(() {
-                                        _currentIndex = index;
-                                      });
-                                    },
-                                    child: SizedBox(
-                                      height: 64,
-                                      child: Center(
-                                        child: AnimatedScale(
-                                          scale: isSelected ? 1.15 : 1.0,
-                                          duration:
-                                              const Duration(milliseconds: 250),
-                                          child: Icon(
-                                            _iconos[index],
-                                            size: 22,
-                                            color: isSelected
-                                                ? const Color(0xFF222222)
-                                                : const Color(0xFF7A837E),
+                                // Fila de iconos interactivos
+                                Row(
+                                  children: List.generate(_iconos.length, (index) {
+                                    final isSelected = _currentIndex == index;
+                                    return Expanded(
+                                      child: GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () {
+                                          setState(() {
+                                            _currentIndex = index;
+                                          });
+                                        },
+                                        child: SizedBox(
+                                          height: 64,
+                                          child: Center(
+                                            child: AnimatedScale(
+                                              scale: isSelected ? 1.15 : 1.0,
+                                              duration:
+                                                  const Duration(milliseconds: 250),
+                                              child: Icon(
+                                                _iconos[index],
+                                                size: 22,
+                                                color: isSelected
+                                                    ? const Color(0xFF222222)
+                                                    : const Color(0xFF7A837E),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ],
-                        );
-                      },
+                                    );
+                                  }),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ),
