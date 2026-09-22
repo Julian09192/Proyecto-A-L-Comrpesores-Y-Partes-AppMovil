@@ -16,7 +16,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   final NotificacionesService _notificacionesService = NotificacionesService();
   
   List<ProductoModel> _productos = [];
-  int _notificacionesSinLeerCount = 0; // Contador de notificaciones reales sin leer
+  int _notificacionesSinLeerCount = 0;
   bool _cargando = true;
 
   @override
@@ -28,7 +28,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<void> _cargarDatosDashboard() async {
     setState(() => _cargando = true);
     try {
-      // Cargamos productos y notificaciones en paralelo desde Supabase
       final results = await Future.wait([
         _productoService.getAll(soloActivos: false),
         _notificacionesService.obtenerNotificaciones(),
@@ -37,7 +36,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
       final prods = results[0] as List<ProductoModel>;
       final notificaciones = results[1] as List<Map<String, dynamic>>;
 
-      // Contamos cuántas notificaciones tienen el campo 'leido' en falso
       final int sinLeer = notificaciones.where((n) => n['leido'] == false).length;
 
       if (!mounted) return;
@@ -106,7 +104,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ],
         ),
         actions: [
-          // 🚀 Icono de Campana con el badge dinámico del número de notificaciones sin leer
           IconButton(
             icon: Stack(
               clipBehavior: Clip.none,
@@ -141,7 +138,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
             tooltip: 'Notificaciones',
             onPressed: () async {
-              // Al hacer clic, navega y al volver recarga para actualizar el contador del badge
               await Navigator.pushNamed(context, '/admin_notificaciones');
               _cargarDatosDashboard();
             },
@@ -187,7 +183,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
               const SizedBox(height: 24),
 
-              // Accesos Rápidos a Módulos Admin
+              // Accesos Rápidos (Sin Módulo de Usuarios)
               const Text(
                 'Módulos de Gestión',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F2537)),
@@ -331,7 +327,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // --- ACCESOS RÁPIDOS A MÓDULOS ---
+  // --- ACCESOS RÁPIDOS A MÓDULOS DE EMPLEADO (SIN USUARIOS) ---
   Widget _construirAccesosRapidos() {
     final modulos = [
       {
@@ -476,7 +472,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Icons.layers_rounded,
               const Color(0xFF222222),
               itemWidth,
-              onTap: () => Navigator.pushNamed(context, '/admin_productos'),
+              onTap: () => Navigator.pushNamed(context, '/empleado_productos'),
             ),
             _tarjeta(
               'VALOR DEL INVENTARIO',
@@ -484,7 +480,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Icons.attach_money_rounded,
               const Color(0xFF10B981),
               itemWidth,
-              onTap: () => Navigator.pushNamed(context, '/admin_reportes'),
+              onTap: () => Navigator.pushNamed(context, '/empleado_reportes'),
             ),
             _tarjeta(
               'ALERTAS DE STOCK',
@@ -493,7 +489,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               const Color(0xFFF97316),
               itemWidth,
               onTap: () async {
-                await Navigator.pushNamed(context, '/admin_notificaciones');
+                await Navigator.pushNamed(context, '/empleado_notificaciones');
                 _cargarDatosDashboard();
               },
             ),
@@ -604,7 +600,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: () {
-            Navigator.pushNamed(context, '/admin_productos');
+            Navigator.pushNamed(context, '/empleado_productos');
           },
           child: Padding(
             padding: const EdgeInsets.all(12),

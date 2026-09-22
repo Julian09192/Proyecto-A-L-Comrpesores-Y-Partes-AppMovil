@@ -19,7 +19,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<List<ProductoModel>>? _futureBusqueda;
   late Future<List<ProductoModel>> _futureRecomendados;
 
-  List<String> _busquedasRecientes = [
+  final List<String> _busquedasRecientes = [
     'Filtro separador',
     'Aceite 20w50',
     'Pistón',

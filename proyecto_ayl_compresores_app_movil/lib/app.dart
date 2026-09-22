@@ -25,13 +25,14 @@ class MiApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.grey[100], 
       ),
       
-      // initialRoute le dice a la app: "Cuando abras, ve directo a esta ruta"
-     initialRoute: '/splash',     
+      initialRoute: '/splash',    
+      
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/home': (context) => const MainNavigation(),
-        // Añade una ruta raíz '/' por si Supabase redirige al dominio principal
         '/': (context) => const MainNavigation(), 
+        
+        // Rutas principales con constructores directos
         '/dashboard_admin': (context) => const AdminDashboard(),
         '/empleado_dashboard': (context) => const EmpleadoDashboard(),
         '/admin_productos': (context) => const ProductsAdminScreen(),
@@ -40,6 +41,7 @@ class MiApp extends StatelessWidget {
         '/admin_usuarios': (context) => const AdminUsuariosView(),
         '/admin_reportes': (context) => const AdminReportesView(),
         '/admin_perfil': (context) => const AdminPerfilView(),
+        
         '/cart': (context) => const CartScreen(),
         '/login': (context) => const LoginScreen(),
       },

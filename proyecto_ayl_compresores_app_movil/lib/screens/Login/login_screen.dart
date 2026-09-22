@@ -149,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final bool autenticado = await _authBiometricos.authenticate(
         localizedReason: 'Usa tu huella o Face ID para iniciar sesión',
-        options: AuthenticationOptions( // <-- Sin la palabra const
+        options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,
         ),
