@@ -45,10 +45,31 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   );
 
+  bool _argumentosCargados = false;
+
   @override
   void initState() {
     super.initState();
     _cargarDatosEstadisticos();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_argumentosCargados) {
+      _argumentosCargados = true;
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic>) {
+        if (args['email'] != null && (args['email'] as String).isNotEmpty) {
+          _emailController.text = args['email'] as String;
+        }
+        if (args['mensajeExito'] != null && (args['mensajeExito'] as String).isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _mostrarNotificacion(args['mensajeExito'] as String);
+          });
+        }
+      }
+    }
   }
 
   @override
@@ -199,18 +220,19 @@ class _LoginScreenState extends State<LoginScreen> {
       _mostrarNotificacion('¡Bienvenido de nuevo, $nombre!');
 
       if (mounted) {
-      if (rol.toLowerCase() == 'admin') {
-        Navigator.pushNamedAndRemoveUntil(context, '/dashboard_admin', (route) => false);
-      } else if (rol.toLowerCase() == 'empleado') {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const EmpleadoDashboard()),
-          (route) => false,
-        );
-      } else {
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        final rolNormalizado = rol.toLowerCase().trim();
+        if (rolNormalizado == 'admin' || rolNormalizado == 'administrador') {
+          Navigator.pushNamedAndRemoveUntil(context, '/dashboard_admin', (route) => false);
+        } else if (rolNormalizado == 'empleado') {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const EmpleadoDashboard()),
+            (route) => false,
+          );
+        } else {
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        }
       }
-    }
     } catch (e) {
       _mostrarNotificacion('Error en autenticación biométrica: $e', esError: true);
     } finally {
@@ -795,26 +817,27 @@ class _LoginScreenState extends State<LoginScreen> {
         _mostrarNotificacion('¡Bienvenido $nombre!');
 
         if (mounted) {
-        if (rol.toLowerCase() == 'admin') {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/dashboard_admin',
-            (route) => false,
-          );
-        } else if (rol.toLowerCase() == 'empleado') {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const EmpleadoDashboard()),
-            (route) => false,
-          );
-        } else {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/home',
-            (route) => false,
-          );
+          final rolNormalizado = rol.toLowerCase().trim();
+          if (rolNormalizado == 'admin' || rolNormalizado == 'administrador') {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/dashboard_admin',
+              (route) => false,
+            );
+          } else if (rolNormalizado == 'empleado') {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const EmpleadoDashboard()),
+              (route) => false,
+            );
+          } else {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/home',
+              (route) => false,
+            );
+          }
         }
-      }
       }
     } catch (e) {
       _mostrarNotificacion('Correo o contraseña incorrectos', esError: true);

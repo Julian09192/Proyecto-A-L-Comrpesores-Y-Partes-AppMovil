@@ -53,7 +53,7 @@ class _RecuperarPasswordScreenState extends State<RecuperarPasswordScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 🚀 1. Validar primero si el usuario existe realmente en tu tabla 'usuario' de Supabase
+      //1. Validar primero si el usuario existe realmente en tu tabla 'usuario' de Supabase
       final usuarioExistente = await Supabase.instance.client
           .from('usuario')
           .select('correo')
@@ -66,8 +66,11 @@ class _RecuperarPasswordScreenState extends State<RecuperarPasswordScreen> {
         return;
       }
 
-      // 🚀 2. Si el usuario es real, procedemos a enviar el correo de recuperación con Supabase Auth
-      await Supabase.instance.client.auth.resetPasswordForEmail(email);
+      // 2. Enviar el correo FORZANDO a Supabase a usar el Deep Link
+      await Supabase.instance.client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'aylapp://reset',
+      );
 
       _mostrarNotificacion('¡Enlace enviado! Revisa tu bandeja de entrada o spam.');
       if (mounted) {

@@ -1,0 +1,7 @@
+*.hprof
+*.log
+.DS_Store
+.dart_tool/
+.idea/
+.vscode/
+build/

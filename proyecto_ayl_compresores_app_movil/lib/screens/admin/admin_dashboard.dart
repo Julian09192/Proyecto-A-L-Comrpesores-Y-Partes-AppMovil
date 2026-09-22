@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/admin/navbar_admin.dart';
 import '../../services/products/producto_service.dart';
-import '../../services/notificaciones/notificacion_service.dart'; // Importa el servicio de notificaciones
+import '../../services/notificaciones/notificacion_service.dart';
 import '../../models/products/producto_model.dart';
 
 class AdminDashboard extends StatefulWidget {

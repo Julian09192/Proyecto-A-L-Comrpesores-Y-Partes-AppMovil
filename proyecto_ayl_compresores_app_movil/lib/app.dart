@@ -17,12 +17,21 @@ import 'screens/empleado/empleado_reportes_view.dart';
 import 'screens/empleado/empleado_notificaciones.dart';
 import 'screens/empleado/empleado_perfil_view.dart';
 
+// 1. IMPORTAMOS LA PANTALLA NUEVA (Asegúrate de haber creado este archivo)
+import 'screens/Login/update_password_screen.dart';
+
+// 2. CREAMOS LA LLAVE GLOBAL DE NAVEGACIÓN
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class MiApp extends StatelessWidget {
   const MiApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // 3. LE PASAMOS LA LLAVE A MATERIAL APP
+      navigatorKey: navigatorKey, 
+      
       title: 'A&L Compresores y Partes',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -50,9 +59,11 @@ class MiApp extends StatelessWidget {
         '/admin_usuarios': (context) => const AdminUsuariosView(),
         '/admin_reportes': (context) => const AdminReportesView(),
         '/admin_perfil': (context) => const AdminPerfilView(),
-        
         '/cart': (context) => const CartScreen(),
         '/login': (context) => const LoginScreen(),
+        
+        // 4. AGREGAMOS LA RUTA DE LA PANTALLA NUEVA
+        '/update_password': (context) => const UpdatePasswordScreen(),
       },
     );
   }
