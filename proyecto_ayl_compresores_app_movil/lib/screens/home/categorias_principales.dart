@@ -44,9 +44,9 @@ class CategoriasPrincipales extends StatelessWidget {
                 onTap: () => onCategoriaTap('Aceite'),
               ),
               _tarjetaCategoria(
-                icono: Icons.air_rounded,
-                nombre: 'Libres de Aire',
-                onTap: () => onCategoriaTap('Libres de Aire'),
+                icono: Icons.filter_alt_outlined,
+                nombre: 'Filtros de Aire',
+                onTap: () => onCategoriaTap('Filtros de Aire'),
               ),
             ],
           ),

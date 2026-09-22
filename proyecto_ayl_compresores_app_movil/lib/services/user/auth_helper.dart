@@ -92,6 +92,20 @@ class AuthHelper {
         'Usuario';
   }
 
+  /// Obtiene el rol sincrónico del usuario desde sus metadatos de sesión
+  static String obtenerRol(User? user) {
+    if (user == null) return 'invitado';
+    final metadataRol = user.userMetadata?['rol']?.toString().toLowerCase().trim();
+    if (metadataRol != null && metadataRol.isNotEmpty) {
+      return metadataRol;
+    }
+    final appMetadataRol = user.appMetadata['rol']?.toString().toLowerCase().trim();
+    if (appMetadataRol != null && appMetadataRol.isNotEmpty) {
+      return appMetadataRol;
+    }
+    return 'cliente';
+  }
+
   /// Asegura que el usuario autenticado exista en la tabla 'usuario' de Supabase al iniciar sesión
   static Future<void> asegurarRegistroUsuario(User user) async {
     try {

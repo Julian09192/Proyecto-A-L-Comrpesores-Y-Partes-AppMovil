@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/user/auth_helper.dart';
 
-// 🚀 Definición de color rojo corporativo estándar y tonos limpios
-const Color empleadoRojo = Color(0xFFDC2626);
-const Color empleadoRojoClaro = Color(0xFFEF4444);
-const Color empleadoTexto = Color(0xFF0F2537);
-const Color empleadoTextoSecundario = Color(0xFF7A837E);
-
 class NavbarEmpleado extends StatelessWidget {
   final String activeTitle;
 
@@ -27,19 +21,19 @@ class NavbarEmpleado extends StatelessWidget {
     final email = user?.email ?? '';
 
     return Drawer(
-      // 🎨 Fondo blanco limpio y profesional
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(
+        0xFF17171C,
+      ), // Tono oscuro y elegante corporativo
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // --- CABECERA CON DATOS DEL EMPLEADO ---
             Container(
               padding: const EdgeInsets.all(25),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(
-                    color: Colors.grey.shade200,
-                  ),
+                  bottom: BorderSide(color: Colors.white10, width: 1),
                 ),
               ),
               child: Column(
@@ -49,19 +43,19 @@ class NavbarEmpleado extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: empleadoRojo,
+                        color: const Color(0xFFFDB913),
                         width: 2,
                       ),
                     ),
                     child: CircleAvatar(
                       radius: 35,
-                      backgroundColor: empleadoRojo.withValues(alpha: 0.1),
+                      backgroundColor: Colors.white,
                       child: Text(
                         nombre.isNotEmpty ? nombre[0].toUpperCase() : 'E',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
-                          color: empleadoRojo,
+                          color: Colors.black,
                         ),
                       ),
                     ),
@@ -70,7 +64,7 @@ class NavbarEmpleado extends StatelessWidget {
                   Text(
                     nombre.isNotEmpty ? nombre : 'Empleado A&L',
                     style: const TextStyle(
-                      color: empleadoTexto,
+                      color: Colors.white,
                       fontWeight: FontWeight.w900,
                       fontSize: 16,
                     ),
@@ -82,9 +76,8 @@ class NavbarEmpleado extends StatelessWidget {
                     Text(
                       email,
                       style: const TextStyle(
-                        color: empleadoTextoSecundario,
+                        color: Colors.white60,
                         fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -96,16 +89,16 @@ class NavbarEmpleado extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: empleadoRojo.withValues(alpha: 0.1),
+                      color: const Color(0xFFFDB913).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
-                      'EMPLEADO ACTIVO',
+                      'EMPLEADO',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
-                        color: empleadoRojo,
-                        letterSpacing: 0.5,
+                        color: Color(0xFFFDB913),
+                        letterSpacing: 0.8,
                       ),
                     ),
                   ),
@@ -113,55 +106,69 @@ class NavbarEmpleado extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
+
+            // --- OPCIONES DEL MENÚ (Estilo Píldora Corporativa) ---
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 children: [
                   _itemMenu(
-                    context,
-                    Icons.dashboard_rounded,
-                    'Dashboard',
-                    _rutaDashboard,
+                    context: context,
+                    icono: Icons.dashboard_rounded,
+                    titulo: 'Dashboard',
+                    ruta: _rutaDashboard,
                   ),
                   _itemMenu(
-                    context,
-                    Icons.inventory_2_rounded,
-                    'Productos',
-                    _rutaProductos,
+                    context: context,
+                    icono: Icons.inventory_2_rounded,
+                    titulo: 'Productos',
+                    ruta: _rutaProductos,
                   ),
                   _itemMenu(
-                    context,
-                    Icons.book_rounded,
-                    'Bitácora',
-                    _rutaBitacora,
+                    context: context,
+                    icono: Icons.book_rounded,
+                    titulo: 'Bitácora',
+                    ruta: _rutaBitacora,
                   ),
                   _itemMenu(
-                    context,
-                    Icons.bar_chart_rounded,
-                    'Reportes',
-                    _rutaReportes,
+                    context: context,
+                    icono: Icons.bar_chart_rounded,
+                    titulo: 'Reportes',
+                    ruta: _rutaReportes,
                   ),
                   _itemMenu(
-                    context,
-                    Icons.notifications_rounded,
-                    'Notificaciones',
-                    _rutaNotificaciones,
+                    context: context,
+                    icono: Icons.notifications_rounded,
+                    titulo: 'Notificaciones',
+                    ruta: _rutaNotificaciones,
                   ),
                   _itemMenu(
-                    context,
-                    Icons.settings_rounded,
-                    'Mi Perfil',
-                    _rutaPerfil,
+                    context: context,
+                    icono: Icons.settings_rounded,
+                    titulo: 'Mi Perfil',
+                    ruta: _rutaPerfil,
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Divider(color: Colors.white12, height: 1),
+                  ),
+                  _itemMenu(
+                    context: context,
+                    icono: Icons.storefront_rounded,
+                    titulo: 'Ir a la Tienda',
+                    ruta: '/home',
                   ),
                 ],
               ),
             ),
+
+            // --- BOTÓN DE CERRAR SESIÓN ---
             Padding(
-              padding: const EdgeInsets.all(15),
+              padding: const EdgeInsets.all(15.0),
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: empleadoRojo.withValues(alpha: 0.1),
-                  foregroundColor: empleadoRojo,
+                  backgroundColor: Colors.red.withValues(alpha: 0.1),
+                  foregroundColor: Colors.redAccent,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -171,7 +178,7 @@ class NavbarEmpleado extends StatelessWidget {
                 icon: const Icon(Icons.exit_to_app_rounded, size: 18),
                 label: const Text(
                   'Cerrar Sesión',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 onPressed: () async {
                   final confirmar = await showDialog<bool>(
@@ -182,15 +189,11 @@ class NavbarEmpleado extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
-                          color: empleadoTexto,
                         ),
                       ),
                       content: const Text(
                         '¿Estás seguro de que deseas cerrar sesión en el sistema?',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          color: empleadoTextoSecundario,
-                        ),
+                        style: TextStyle(fontSize: 13.5),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -201,14 +204,14 @@ class NavbarEmpleado extends StatelessWidget {
                           child: const Text(
                             'Cancelar',
                             style: TextStyle(
-                              color: empleadoTextoSecundario,
+                              color: Colors.grey,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: empleadoRojo,
+                            backgroundColor: Colors.redAccent,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -233,7 +236,7 @@ class NavbarEmpleado extends StatelessWidget {
                     if (context.mounted) {
                       Navigator.pushNamedAndRemoveUntil(
                         context,
-                        '/inicio', // Redirige a inicio_view
+                        '/home',
                         (route) => false,
                       );
                     }
@@ -247,31 +250,33 @@ class NavbarEmpleado extends StatelessWidget {
     );
   }
 
-  Widget _itemMenu(
-    BuildContext context,
-    IconData icono,
-    String titulo,
-    String ruta,
-  ) {
-    final activo = activeTitle == titulo;
+  // --- WIDGET REUTILIZABLE DE LA PÍLDORA ---
+  Widget _itemMenu({
+    required BuildContext context,
+    required IconData icono,
+    required String titulo,
+    required String ruta,
+  }) {
+    final bool activo = activeTitle == titulo;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: activo ? empleadoRojo : Colors.transparent,
+        color: activo ? const Color(0xFFFDB913) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         leading: Icon(
           icono,
-          color: activo ? Colors.white : empleadoTextoSecundario,
+          color: activo ? Colors.black : Colors.white70,
           size: 20,
         ),
         title: Text(
           titulo,
           style: TextStyle(
-            color: activo ? Colors.white : empleadoTexto,
-            fontWeight: activo ? FontWeight.w900 : FontWeight.w600,
+            color: activo ? Colors.black : Colors.white,
+            fontWeight: activo ? FontWeight.w900 : FontWeight.w500,
             fontSize: 13.5,
           ),
         ),

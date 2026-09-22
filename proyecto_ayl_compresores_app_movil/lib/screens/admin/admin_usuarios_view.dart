@@ -35,10 +35,12 @@ class _AdminUsuariosViewState extends State<AdminUsuariosView> {
     setState(() => isLoading = true);
     try {
       final data = await UsuarioService.obtenerUsuarios();
+      // El administrador solo gestiona empleados y otros administradores (excluir clientes)
+      final staff = data.where((u) => u.rol.toLowerCase() != 'cliente').toList();
       if (!mounted) return;
       setState(() {
-        usuarios = data;
-        usuariosFiltrados = data;
+        usuarios = staff;
+        usuariosFiltrados = staff;
         isLoading = false;
       });
     } catch (e) {
@@ -63,8 +65,6 @@ class _AdminUsuariosViewState extends State<AdminUsuariosView> {
           return coincideTexto && ['admin', 'administrador'].contains(usuario.rol.toLowerCase());
         } else if (_filtroRolSeleccionado == 'Empleado') {
           return coincideTexto && usuario.rol.toLowerCase() == 'empleado';
-        } else if (_filtroRolSeleccionado == 'Cliente') {
-          return coincideTexto && usuario.rol.toLowerCase() == 'cliente';
         }
         return coincideTexto;
       }).toList();
@@ -95,14 +95,48 @@ class _AdminUsuariosViewState extends State<AdminUsuariosView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: const Color(0xFFF7F8FA),
       drawer: const NavbarAdmin(activeTitle: 'Usuarios'),
       appBar: AppBar(
-        title: const Text('Control de Usuarios', style: TextStyle(color: Colors.white, fontSize: 18)),
-        backgroundColor: const Color(0xFF1E1E24),
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        iconTheme: const IconThemeData(color: Color(0xFF1E242B)),
+        centerTitle: true,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'A&L',
+              style: TextStyle(
+                color: Color(0xFF1E242B),
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFDB913),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'ADMIN',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
-          IconButton(icon: const Icon(Icons.sync), onPressed: _cargarUsuarios),
+          IconButton(
+            icon: const Icon(Icons.sync_rounded, color: Color(0xFF1E242B), size: 22),
+            tooltip: 'Sincronizar',
+            onPressed: _cargarUsuarios,
+          ),
         ],
       ),
       body: isLoading 
@@ -134,14 +168,14 @@ class _AdminUsuariosViewState extends State<AdminUsuariosView> {
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
-                        children: ['Todos', 'Admin', 'Empleado', 'Cliente'].map((rol) {
+                        children: ['Todos', 'Admin', 'Empleado'].map((rol) {
                           bool seleccionado = _filtroRolSeleccionado == rol;
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: ChoiceChip(
                               label: Text(rol),
                               selected: seleccionado,
-                              selectedColor: Colors.amber,
+                              selectedColor: const Color(0xFFFDB913),
                               backgroundColor: Colors.white,
                               labelStyle: TextStyle(color: seleccionado ? Colors.black : Colors.grey.shade700, fontWeight: FontWeight.bold),
                               onSelected: (bool selected) {
@@ -180,6 +214,7 @@ class _AdminUsuariosViewState extends State<AdminUsuariosView> {
     int total = usuarios.length;
     int activos = usuarios.where((u) => !u.suspendido).length;
     int admin = usuarios.where((u) => ['admin', 'administrador'].contains(u.rol.toLowerCase())).length;
+    int empleados = usuarios.where((u) => u.rol.toLowerCase() == 'empleado').length;
 
     return Container(
       height: 110,
@@ -188,10 +223,11 @@ class _AdminUsuariosViewState extends State<AdminUsuariosView> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 15),
         children: [
-          _tarjetaMetrica('TOTAL', total.toString(), Colors.black),
+          _tarjetaMetrica('EQUIPO', total.toString(), Colors.black),
           _tarjetaMetrica('ACTIVOS', activos.toString(), Colors.green),
+          _tarjetaMetrica('ADMINS', admin.toString(), const Color(0xFFFDB913)),
+          _tarjetaMetrica('EMPLEADOS', empleados.toString(), const Color(0xFF0F2537)),
           _tarjetaMetrica('SUSPENDIDOS', (total - activos).toString(), Colors.red),
-          _tarjetaMetrica('ADMINS', admin.toString(), Colors.amber.shade700),
         ],
       ),
     );

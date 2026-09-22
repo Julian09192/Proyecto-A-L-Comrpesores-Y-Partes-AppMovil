@@ -42,7 +42,7 @@ class _EditProductState extends State<EditProduct> {
     'Tornillo',
     'Pistón',
     'Filtros',
-    'Libres de Aire',
+    'Filtros de Aire',
     'General',
   ];
 
@@ -98,8 +98,15 @@ class _EditProductState extends State<EditProduct> {
       }
     } catch (e) {
       if (mounted) {
+        final mensaje = e.toString().toLowerCase().contains('permission')
+            ? 'Permiso denegado. Concede acceso a la cámara o fotos en los ajustes de tu celular.'
+            : 'Error al obtener la imagen: $e';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al obtener la imagen: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(mensaje),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }

@@ -3,8 +3,9 @@ import 'package:proyecto_ayl_compresores_app_movil/models/reportes/reporte_model
 import 'package:proyecto_ayl_compresores_app_movil/services/reporte/reporte_service.dart';
 import '../../widgets/empleado/navbar_empleado.dart';
 
-// 🚀 Definición de color rojo corporativo estándar y tonos de apoyo
-const Color empleadoRojo = Color(0xFFDC2626);
+// 🚀 Paleta corporativa A&L: Negro, Blanco y Amarillo #FDB913
+const Color empleadoAmarillo = Color(0xFFFDB913);
+const Color empleadoRojo = Color(0xFFFDB913);
 const Color empleadoFondo = Color(0xFFF7F8FA);
 const Color empleadoTexto = Color(0xFF0F2537);
 const Color empleadoTextoSecundario = Color(0xFF7A837E);
@@ -69,14 +70,14 @@ class _EmpleadoReportesViewState extends State<EmpleadoReportesView> {
         actions: [
           IconButton(
             onPressed: _cargar,
-            icon: const Icon(Icons.sync_rounded, color: empleadoRojo),
+            icon: const Icon(Icons.sync_rounded, color: empleadoTexto),
             tooltip: 'Sincronizar reportes',
           ),
           const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
-        color: empleadoRojo,
+        color: empleadoAmarillo,
         onRefresh: _cargar,
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -86,7 +87,7 @@ class _EmpleadoReportesViewState extends State<EmpleadoReportesView> {
                 child: Padding(
                   padding: EdgeInsets.all(40),
                   child: CircularProgressIndicator(
-                    color: empleadoRojo,
+                    color: empleadoAmarillo,
                     strokeWidth: 2.5,
                   ),
                 ),
@@ -192,15 +193,15 @@ class _EmpleadoReportesViewState extends State<EmpleadoReportesView> {
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: empleadoRojo.withValues(
-                                        alpha: 0.1,
+                                      color: const Color(0xFF0F2537).withValues(
+                                        alpha: 0.08,
                                       ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       '${cat.stockTotal} unds',
                                       style: const TextStyle(
-                                        color: empleadoRojo,
+                                        color: empleadoTexto,
                                         fontWeight: FontWeight.w900,
                                         fontSize: 12,
                                       ),
@@ -255,7 +256,7 @@ class _EmpleadoReportesViewState extends State<EmpleadoReportesView> {
                   ),
                 ),
               ),
-              Icon(icon, color: empleadoRojo, size: 16),
+              Icon(icon, color: const Color(0xFF0F2537), size: 16),
             ],
           ),
           const SizedBox(height: 12),

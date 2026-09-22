@@ -5,9 +5,10 @@ import '../../services/notificaciones/notificacion_service.dart';
 import '../../services/products/producto_service.dart';
 import '../../widgets/empleado/navbar_empleado.dart';
 
-// 🚀 Definición de color rojo corporativo estándar y tonos de apoyo
-const Color empleadoRojo = Color(0xFFDC2626);
-const Color empleadoRojoClaro = Color(0xFFEF4444);
+// 🚀 Paleta corporativa A&L: Negro, Blanco y Amarillo #FDB913
+const Color empleadoAmarillo = Color(0xFFFDB913);
+const Color empleadoRojo = Color(0xFFFDB913);
+const Color empleadoRojoClaro = Color(0xFFFDB913);
 const Color empleadoFondo = Color(0xFFF7F8FA);
 
 const Color empleadoVerdeMetalico = Color(0xFF10B981);
@@ -16,12 +17,10 @@ const Color empleadoNaranjaAlerta = Color(0xFFF97316);
 const Color _textoPrincipal = Color(0xFF0F2537);
 const Color _textoSecundario = Color(0xFF7A837E);
 
-const _rutaEmpleadoDashboard = '/empleado_dashboard';
 const _rutaEmpleadoProductos = '/empleado_productos';
 const _rutaEmpleadoBitacora = '/empleado_bitacora';
 const _rutaEmpleadoReportes = '/empleado_reportes';
 const _rutaEmpleadoNotificaciones = '/empleado_notificaciones';
-const _rutaEmpleadoPerfil = '/empleado_perfil';
 
 class EmpleadoDashboard extends StatefulWidget {
   const EmpleadoDashboard({super.key});
@@ -106,13 +105,13 @@ class _EmpleadoDashboardState extends State<EmpleadoDashboard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: empleadoRojo,
+                color: const Color(0xFFFDB913),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text(
                 'EMPLEADO',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                 ),
@@ -149,7 +148,7 @@ class _EmpleadoDashboardState extends State<EmpleadoDashboard> {
                             ? '9+'
                             : '$_notificacionesSinLeerCount',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                         ),

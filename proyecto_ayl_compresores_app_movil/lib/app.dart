@@ -11,6 +11,11 @@ import 'screens/admin/admin_perfil_view.dart';
 import 'screens/cart/cart_screen.dart';
 import 'screens/Login/login_screen.dart';
 import 'screens/empleado/empleado_dashboard.dart';
+import 'screens/empleado/empleado_productos.dart';
+import 'screens/empleado/empleado_bitacora_view.dart';
+import 'screens/empleado/empleado_reportes_view.dart';
+import 'screens/empleado/empleado_notificaciones.dart';
+import 'screens/empleado/empleado_perfil_view.dart';
 
 class MiApp extends StatelessWidget {
   const MiApp({super.key});
@@ -34,6 +39,11 @@ class MiApp extends StatelessWidget {
         '/': (context) => const MainNavigation(), 
         '/dashboard_admin': (context) => const AdminDashboard(),
         '/empleado_dashboard': (context) => const EmpleadoDashboard(),
+        '/empleado_productos': (context) => const EmpleadoProductos(),
+        '/empleado_bitacora': (context) => const EmpleadoBitacoraView(),
+        '/empleado_reportes': (context) => const EmpleadoReportesView(),
+        '/empleado_notificaciones': (context) => const EmpleadoNotificaciones(),
+        '/empleado_perfil': (context) => const EmpleadoPerfilView(),
         '/admin_productos': (context) => const ProductsAdminScreen(),
         '/admin_notificaciones': (context) => const NotificationAdminScreen(),
         '/admin_bitacora': (context) => const AdminBitacoraView(),

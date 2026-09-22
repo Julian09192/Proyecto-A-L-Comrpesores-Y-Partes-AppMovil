@@ -34,10 +34,22 @@ class _MainNavigationState extends State<MainNavigation> {
     Icons.settings_rounded,
   ];
 
+  String _rolUsuario = '';
+
   @override
   void initState() {
     super.initState();
     _cartService.addListener(_actualizarContador);
+    _consultarRol();
+  }
+
+  Future<void> _consultarRol() async {
+    final rol = await AuthHelper.obtenerRolUsuario();
+    if (mounted) {
+      setState(() {
+        _rolUsuario = rol.toLowerCase();
+      });
+    }
   }
 
   @override
@@ -60,6 +72,12 @@ class _MainNavigationState extends State<MainNavigation> {
     // 🚀 Verificamos el estado de sesión actual para el icono superior
     final currentUser = Supabase.instance.client.auth.currentUser;
     final nombreUsuario = currentUser != null ? AuthHelper.obtenerNombre(currentUser) : 'Invitado';
+    final rol = _rolUsuario.isNotEmpty 
+        ? _rolUsuario 
+        : (currentUser != null ? AuthHelper.obtenerRol(currentUser).toLowerCase() : '');
+    final bool esAdmin = rol == 'admin' || rol == 'administrador';
+    final bool esEmpleado = rol == 'empleado';
+    final bool esStaff = esAdmin || esEmpleado;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
@@ -126,9 +144,55 @@ class _MainNavigationState extends State<MainNavigation> {
                         ),
                       ),
 
-                      // --- ACCIONES SUPERIORES (Usuario + Carrito) ---
+                      // --- ACCIONES SUPERIORES (Staff pill + Usuario + Carrito) ---
                       Row(
                         children: [
+                          if (esStaff) ...[
+                            GestureDetector(
+                              onTap: () {
+                                if (esAdmin) {
+                                  Navigator.pushNamedAndRemoveUntil(context, '/dashboard_admin', (route) => false);
+                                } else {
+                                  Navigator.pushNamedAndRemoveUntil(context, '/empleado_dashboard', (route) => false);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFDB913),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFDB913).withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      esAdmin ? Icons.admin_panel_settings_rounded : Icons.badge_rounded,
+                                      size: 15,
+                                      color: const Color(0xFF0F2537),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      esAdmin ? 'Panel Admin' : 'Panel Empleado',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w900,
+                                        color: Color(0xFF0F2537),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+
                           // 🚀 Icono de Usuario con Menú Desplegable Flotante
                           IconButton(
                             icon: const Icon(
@@ -146,7 +210,7 @@ class _MainNavigationState extends State<MainNavigation> {
                                 showMenu(
                                   context: context,
                                   position: RelativeRect.fromLTRB(
-                                    position.dx + MediaQuery.of(context).size.width - 140, 
+                                    position.dx + MediaQuery.of(context).size.width - 160, 
                                     65 + MediaQuery.of(context).padding.top, 
                                     20, 
                                     0,
@@ -181,6 +245,33 @@ class _MainNavigationState extends State<MainNavigation> {
                                         ],
                                       ),
                                     ),
+
+                                    // 🚀 Opción para volver al Panel si es Admin o Empleado
+                                    if (esStaff)
+                                      PopupMenuItem(
+                                        onTap: () {
+                                          if (esAdmin) {
+                                            Navigator.pushNamedAndRemoveUntil(context, '/dashboard_admin', (route) => false);
+                                          } else {
+                                            Navigator.pushNamedAndRemoveUntil(context, '/empleado_dashboard', (route) => false);
+                                          }
+                                        },
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              esAdmin ? Icons.admin_panel_settings_rounded : Icons.badge_rounded, 
+                                              size: 18, 
+                                              color: const Color(0xFFFDB913),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              esAdmin ? 'Volver al Panel Admin' : 'Volver al Panel Empleado',
+                                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF0F2537)),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
                                     // 2. Opción de Ver Perfil
                                     PopupMenuItem(
                                       onTap: () {

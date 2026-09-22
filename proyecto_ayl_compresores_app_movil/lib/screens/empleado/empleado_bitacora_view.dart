@@ -3,8 +3,9 @@ import 'package:proyecto_ayl_compresores_app_movil/models/bitacora/bitacora_mode
 import 'package:proyecto_ayl_compresores_app_movil/services/bitacora/bitacora_service.dart';
 import '../../widgets/empleado/navbar_empleado.dart';
 
-// Definición de color rojo corporativo estándar
-const Color empleadoRojo = Color(0xFFDC2626);
+// 🚀 Paleta corporativa A&L: Negro, Blanco y Amarillo #FDB913
+const Color empleadoAmarillo = Color(0xFFFDB913);
+const Color empleadoRojo = Color(0xFFFDB913);
 
 class EmpleadoBitacoraView extends StatefulWidget {
   const EmpleadoBitacoraView({super.key});
@@ -39,7 +40,7 @@ class _EmpleadoBitacoraViewState extends State<EmpleadoBitacoraView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al cargar la bitácora: $e'),
-          backgroundColor: empleadoRojo,
+          backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -76,14 +77,14 @@ class _EmpleadoBitacoraViewState extends State<EmpleadoBitacoraView> {
         actions: [
           IconButton(
             onPressed: _cargar,
-            icon: const Icon(Icons.sync_rounded, color: empleadoRojo),
+            icon: const Icon(Icons.sync_rounded, color: Color(0xFF0F2537)),
             tooltip: 'Sincronizar',
           ),
           const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
-        color: empleadoRojo,
+        color: empleadoAmarillo,
         onRefresh: _cargar,
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -99,21 +100,19 @@ class _EmpleadoBitacoraViewState extends State<EmpleadoBitacoraView> {
                         child: ChoiceChip(
                           label: Text(filtro),
                           selected: _filtro == filtro,
-                          selectedColor: empleadoRojo,
+                          selectedColor: empleadoAmarillo,
                           backgroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
                               color: _filtro == filtro
-                                  ? empleadoRojo
+                                  ? empleadoAmarillo
                                   : Colors.grey.shade300,
                             ),
                           ),
-                          labelStyle: TextStyle(
-                            color: _filtro == filtro
-                                ? Colors.white
-                                : const Color(0xFF0F2537),
+                          labelStyle: const TextStyle(
+                            color: Color(0xFF0F2537),
                             fontWeight: FontWeight.w700,
                             fontSize: 12.5,
                           ),
@@ -130,7 +129,7 @@ class _EmpleadoBitacoraViewState extends State<EmpleadoBitacoraView> {
                 child: Padding(
                   padding: EdgeInsets.all(40),
                   child: CircularProgressIndicator(
-                    color: empleadoRojo,
+                    color: empleadoAmarillo,
                     strokeWidth: 2.5,
                   ),
                 ),
@@ -180,12 +179,12 @@ class _EmpleadoBitacoraViewState extends State<EmpleadoBitacoraView> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: empleadoRojo.withValues(alpha: 0.1),
+                color: empleadoAmarillo.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
                 Icons.history_rounded,
-                color: empleadoRojo,
+                color: Color(0xFF0F2537),
                 size: 20,
               ),
             ),
@@ -197,13 +196,23 @@ class _EmpleadoBitacoraViewState extends State<EmpleadoBitacoraView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        movimiento.accion.toUpperCase(),
-                        style: const TextStyle(
-                          color: empleadoRojo,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12,
-                          letterSpacing: 0.5,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F2537).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          movimiento.accion.toUpperCase(),
+                          style: const TextStyle(
+                            color: Color(0xFF0F2537),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 11,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                       Text(

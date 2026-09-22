@@ -110,7 +110,7 @@ class ProductosPage extends StatelessWidget {
                 _buildFilterChip('Tornillo'),
                 _buildFilterChip('Pistón'),
                 _buildFilterChip('Aceite'),
-                _buildFilterChip('Libres de Aire'),
+                _buildFilterChip('Filtros de Aire'),
               ],
             ),
           ),

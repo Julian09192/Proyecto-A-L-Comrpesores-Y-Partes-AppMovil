@@ -3,9 +3,10 @@ import '../../models/products/producto_model.dart';
 import '../../services/products/producto_service.dart';
 import '../../widgets/empleado/navbar_empleado.dart';
 
-// 🚀 Definición de color rojo corporativo estándar y tonos de apoyo
-const Color empleadoRojo = Color(0xFFDC2626);
-const Color empleadoRojoClaro = Color(0xFFEF4444);
+// 🚀 Paleta corporativa A&L: Negro, Blanco y Amarillo #FDB913
+const Color empleadoAmarillo = Color(0xFFFDB913);
+const Color empleadoRojo = Color(0xFFFDB913);
+const Color empleadoRojoClaro = Color(0xFFFDB913);
 const Color empleadoFondo = Color(0xFFF7F8FA);
 const Color empleadoTexto = Color(0xFF0F2537);
 const Color empleadoTextoSecundario = Color(0xFF7A837E);
@@ -90,19 +91,19 @@ class _EmpleadoProductosState extends State<EmpleadoProductos> {
         actions: [
           IconButton(
             onPressed: _cargar,
-            icon: const Icon(Icons.sync_rounded, color: empleadoRojo),
+            icon: const Icon(Icons.sync_rounded, color: empleadoTexto),
             tooltip: 'Sincronizar inventario',
           ),
           const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
-        color: empleadoRojo,
+        color: empleadoAmarillo,
         onRefresh: _cargar,
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            // Barra de búsqueda moderna con acento en rojo corporativo
+            // Barra de búsqueda moderna
             TextField(
               controller: _search,
               onChanged: (_) => setState(() {}),
@@ -111,7 +112,7 @@ class _EmpleadoProductosState extends State<EmpleadoProductos> {
                 hintStyle: const TextStyle(color: empleadoTextoSecundario, fontSize: 13.5),
                 prefixIcon: const Icon(
                   Icons.search_rounded,
-                  color: empleadoRojo,
+                  color: empleadoTexto,
                   size: 22,
                 ),
                 filled: true,
@@ -132,7 +133,7 @@ class _EmpleadoProductosState extends State<EmpleadoProductos> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: empleadoRojo, width: 1.8),
+                  borderSide: const BorderSide(color: empleadoAmarillo, width: 1.8),
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
@@ -144,7 +145,7 @@ class _EmpleadoProductosState extends State<EmpleadoProductos> {
                 child: Padding(
                   padding: EdgeInsets.all(40),
                   child: CircularProgressIndicator(
-                    color: empleadoRojo,
+                    color: empleadoAmarillo,
                     strokeWidth: 2.5,
                   ),
                 ),
@@ -187,7 +188,7 @@ class _EmpleadoProductosState extends State<EmpleadoProductos> {
         : 'Disponible';
 
     final Color estadoColor = esSuspendido
-        ? empleadoRojo
+        ? const Color(0xFFDC2626)
         : stockBajo
         ? Colors.orange.shade800
         : Colors.green.shade700;
@@ -230,7 +231,7 @@ class _EmpleadoProductosState extends State<EmpleadoProductos> {
                       )
                     : const Icon(
                         Icons.inventory_2_outlined,
-                        color: empleadoRojo,
+                        color: empleadoAmarillo,
                         size: 28,
                       ),
               ),
@@ -245,7 +246,7 @@ class _EmpleadoProductosState extends State<EmpleadoProductos> {
                   Text(
                     p.marca.toUpperCase(),
                     style: const TextStyle(
-                      color: empleadoRojo,
+                      color: Color(0xFFB47D00),
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 0.5,

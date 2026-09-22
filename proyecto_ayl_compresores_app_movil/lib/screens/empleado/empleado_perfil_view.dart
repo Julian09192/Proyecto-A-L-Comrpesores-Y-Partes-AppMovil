@@ -3,9 +3,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/user/auth_helper.dart';
 import '../../widgets/empleado/navbar_empleado.dart';
 
-// 🚀 Definición de color rojo corporativo estándar
-const Color empleadoRojo = Color(0xFFDC2626);
-const Color empleadoRojoClaro = Color(0xFFEF4444);
+// 🚀 Paleta corporativa A&L: Negro, Blanco y Amarillo #FDB913
+const Color empleadoAmarillo = Color(0xFFFDB913);
+const Color empleadoRojo = Color(0xFFFDB913);
+const Color empleadoRojoClaro = Color(0xFFFDB913);
 const Color empleadoFondo = Color(0xFFF7F8FA);
 const Color empleadoTexto = Color(0xFF0F2537);
 const Color empleadoTextoSecundario = Color(0xFF7A837E);
@@ -55,7 +56,7 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
                     ),
                     prefixIcon: const Icon(
                       Icons.lock_open_rounded,
-                      color: empleadoRojo,
+                      color: empleadoTexto,
                       size: 20,
                     ),
                     filled: true,
@@ -70,7 +71,7 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: empleadoRojo, width: 1.5),
+                      borderSide: const BorderSide(color: empleadoAmarillo, width: 1.5),
                     ),
                   ),
                   validator: (value) => value == null || value.isEmpty
@@ -90,7 +91,7 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
                     ),
                     prefixIcon: const Icon(
                       Icons.lock_outline_rounded,
-                      color: empleadoRojo,
+                      color: empleadoTexto,
                       size: 20,
                     ),
                     filled: true,
@@ -105,7 +106,7 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: empleadoRojo, width: 1.5),
+                      borderSide: const BorderSide(color: empleadoAmarillo, width: 1.5),
                     ),
                   ),
                   validator: (value) {
@@ -135,8 +136,8 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: empleadoRojo,
-              foregroundColor: Colors.white,
+              backgroundColor: empleadoAmarillo,
+              foregroundColor: empleadoTexto,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -182,7 +183,7 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('La contraseña actual es incorrecta o falló la actualización'),
-                      backgroundColor: empleadoRojo,
+                      backgroundColor: Colors.red.shade700,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -232,7 +233,7 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(
-                color: empleadoRojo,
+                color: empleadoAmarillo,
                 strokeWidth: 2.5,
               ),
             )
@@ -259,11 +260,11 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
                       children: [
                         CircleAvatar(
                           radius: 42,
-                          backgroundColor: empleadoRojo.withValues(alpha: 0.1),
+                          backgroundColor: empleadoAmarillo,
                           child: Text(
                             nombre.isNotEmpty ? nombre[0].toUpperCase() : 'E',
                             style: const TextStyle(
-                              color: empleadoRojo,
+                              color: Color(0xFF0F2537),
                               fontSize: 30,
                               fontWeight: FontWeight.w900,
                             ),
@@ -294,13 +295,13 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: empleadoRojo.withValues(alpha: 0.1),
+                            color: empleadoAmarillo.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Text(
                             'EMPLEADO ACTIVO',
                             style: TextStyle(
-                              color: empleadoRojo,
+                              color: Color(0xFF0F2537),
                               fontSize: 11,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.5,
@@ -337,12 +338,12 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: empleadoRojo.withValues(alpha: 0.1),
+                            color: empleadoAmarillo.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
                             Icons.email_outlined,
-                            color: empleadoRojo,
+                            color: Color(0xFF0F2537),
                             size: 20,
                           ),
                         ),
@@ -376,12 +377,12 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: empleadoRojo.withValues(alpha: 0.1),
+                            color: empleadoAmarillo.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
                             Icons.verified_user_outlined,
-                            color: empleadoRojo,
+                            color: Color(0xFF0F2537),
                             size: 20,
                           ),
                         ),
@@ -415,12 +416,12 @@ class _EmpleadoPerfilViewState extends State<EmpleadoPerfilView> {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: empleadoRojo.withValues(alpha: 0.1),
+                            color: empleadoAmarillo.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
                             Icons.lock_outline_rounded,
-                            color: empleadoRojo,
+                            color: Color(0xFF0F2537),
                             size: 20,
                           ),
                         ),

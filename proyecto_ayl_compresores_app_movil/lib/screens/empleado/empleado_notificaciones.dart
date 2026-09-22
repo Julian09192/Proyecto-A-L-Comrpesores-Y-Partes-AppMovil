@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '../../services/notificaciones/notificacion_service.dart';
 import '../../widgets/empleado/navbar_empleado.dart';
 
-// 🚀 Definición de color rojo corporativo estándar
-const Color empleadoRojo = Color(0xFFDC2626);
+// 🚀 Paleta corporativa A&L: Negro, Blanco y Amarillo #FDB913
+const Color empleadoAmarillo = Color(0xFFFDB913);
+const Color empleadoRojo = Color(0xFFFDB913);
 const Color empleadoFondo = Color(0xFFF7F8FA);
 const Color empleadoTexto = Color(0xFF0F2537);
 const Color empleadoTextoSecundario = Color(0xFF7A837E);
@@ -73,19 +74,19 @@ class _EmpleadoNotificacionesState extends State<EmpleadoNotificaciones> {
         actions: [
           IconButton(
             onPressed: noLeidas == 0 ? null : _marcarLeidas,
-            icon: const Icon(Icons.done_all_rounded, color: empleadoRojo),
+            icon: const Icon(Icons.done_all_rounded, color: empleadoTexto),
             tooltip: 'Marcar todas como leídas',
           ),
           IconButton(
             onPressed: _cargar,
-            icon: const Icon(Icons.sync_rounded, color: empleadoRojo),
+            icon: const Icon(Icons.sync_rounded, color: empleadoTexto),
             tooltip: 'Sincronizar',
           ),
           const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
-        color: empleadoRojo,
+        color: empleadoAmarillo,
         onRefresh: _cargar,
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -113,7 +114,7 @@ class _EmpleadoNotificacionesState extends State<EmpleadoNotificaciones> {
                 child: Padding(
                   padding: EdgeInsets.all(40),
                   child: CircularProgressIndicator(
-                    color: empleadoRojo,
+                    color: empleadoAmarillo,
                     strokeWidth: 2.5,
                   ),
                 ),
@@ -145,15 +146,15 @@ class _EmpleadoNotificacionesState extends State<EmpleadoNotificaciones> {
       label: Text(label),
       selected: active,
       onSelected: (_) => onTap(),
-      selectedColor: empleadoRojo,
+      selectedColor: empleadoAmarillo,
       backgroundColor: Colors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: active ? empleadoRojo : Colors.grey.shade300),
+        side: BorderSide(color: active ? empleadoAmarillo : Colors.grey.shade300),
       ),
       labelStyle: TextStyle(
-        color: active ? Colors.white : empleadoTexto,
+        color: active ? const Color(0xFF0F2537) : empleadoTexto,
         fontWeight: FontWeight.w700,
         fontSize: 12.5,
       ),
@@ -168,12 +169,12 @@ class _EmpleadoNotificacionesState extends State<EmpleadoNotificaciones> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: leida ? Colors.white : empleadoRojo.withValues(alpha: 0.02),
+        color: leida ? Colors.white : const Color(0xFFFDB913).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: leida
               ? Colors.grey.shade200
-              : empleadoRojo.withValues(alpha: 0.3),
+              : const Color(0xFFFDB913).withValues(alpha: 0.5),
           width: leida ? 1.2 : 1.5,
         ),
         boxShadow: [
@@ -208,7 +209,7 @@ class _EmpleadoNotificacionesState extends State<EmpleadoNotificaciones> {
                       )
                     : const Icon(
                         Icons.notifications_active_rounded,
-                        color: empleadoRojo,
+                        color: empleadoTexto,
                         size: 24,
                       ),
               ),
@@ -241,7 +242,7 @@ class _EmpleadoNotificacionesState extends State<EmpleadoNotificaciones> {
                           width: 8,
                           height: 8,
                           decoration: const BoxDecoration(
-                            color: empleadoRojo,
+                            color: empleadoAmarillo,
                             shape: BoxShape.circle,
                           ),
                         ),

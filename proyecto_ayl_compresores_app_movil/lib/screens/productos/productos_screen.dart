@@ -46,7 +46,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     'Tornillo',
     'Pistón',
     'Aceite',
-    'Libres de Aire',
+    'Filtros de Aire',
   ];
 
   @override

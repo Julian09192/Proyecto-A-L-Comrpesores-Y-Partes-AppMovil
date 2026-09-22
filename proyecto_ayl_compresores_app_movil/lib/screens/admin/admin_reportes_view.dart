@@ -148,20 +148,50 @@ class _AdminReportesViewState extends State<AdminReportesView> {
     ];
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: const Color(0xFFF7F8FA),
       drawer: const NavbarAdmin(activeTitle: 'Reportes'),
       appBar: AppBar(
-        title: const Text('Reportes e Informes', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1E1E24),
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        iconTheme: const IconThemeData(color: Color(0xFF1E242B)),
+        centerTitle: true,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'A&L',
+              style: TextStyle(
+                color: Color(0xFF1E242B),
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFDB913),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'ADMIN',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.file_download_outlined),
+            icon: const Icon(Icons.file_download_outlined, color: Color(0xFF1E242B), size: 22),
             tooltip: 'Exportar a CSV',
             onPressed: () => _exportarACSV(productos),
           ),
           IconButton(
-            icon: const Icon(Icons.sync),
+            icon: const Icon(Icons.sync_rounded, color: Color(0xFF1E242B), size: 22),
             tooltip: 'Refrescar datos',
             onPressed: _cargarReporte,
           ),
