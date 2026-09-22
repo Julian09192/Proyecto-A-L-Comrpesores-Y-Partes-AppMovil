@@ -13,10 +13,18 @@ Future<void> main() async {
   } catch (e) {
     debugPrint("Advertencia: No se pudo cargar el archivo .env: $e");
   }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5f73118 (Archivo arreglo)
 
   // 3. Inicializa la conexión con Supabase usando tu servicio
   await SupabaseService.initialize();
 
   // 4. Finalmente, arranca la aplicación visual
   runApp(const MiApp());
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 5f73118 (Archivo arreglo)

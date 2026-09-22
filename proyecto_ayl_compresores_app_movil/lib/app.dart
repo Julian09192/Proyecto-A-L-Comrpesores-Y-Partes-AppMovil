@@ -10,6 +10,7 @@ import 'screens/admin/admin_reportes_view.dart';
 import 'screens/admin/admin_perfil_view.dart';
 import 'screens/cart/cart_screen.dart';
 import 'screens/Login/login_screen.dart';
+import 'screens/empleado/empleado_dashboard.dart';
 
 class MiApp extends StatelessWidget {
   const MiApp({super.key});
@@ -32,6 +33,7 @@ class MiApp extends StatelessWidget {
         // Añade una ruta raíz '/' por si Supabase redirige al dominio principal
         '/': (context) => const MainNavigation(), 
         '/dashboard_admin': (context) => const AdminDashboard(),
+        '/empleado_dashboard': (context) => const EmpleadoDashboard(),
         '/admin_productos': (context) => const ProductsAdminScreen(),
         '/admin_notificaciones': (context) => const NotificationAdminScreen(),
         '/admin_bitacora': (context) => const AdminBitacoraView(),
